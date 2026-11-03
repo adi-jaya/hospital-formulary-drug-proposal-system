@@ -103,7 +103,7 @@ class ProposalExportService
 
                 $writer->addRow(Row::fromValues([
                     $no++,
-                    Carbon::parse($item->proposal_date)->format('Y-m-d'),
+                    Carbon::parse($item->proposal_date)->format('d/m/Y'),
                     $item->period_year,
                     SpreadsheetSanitizer::sanitizeCell($item->doctor_name),
                     SpreadsheetSanitizer::sanitizeCell($item->medicine_name),

@@ -43,7 +43,9 @@ it('streams sanitized utf-8 csv for valid token and respects optional period_yea
 
     $csvContent = $response->streamedContent();
     expect($csvContent)
-        ->toContain('No,Tanggal,"Tahun Periode","Nama Dokter","Nama Obat","Nama Principle","Waktu Input"')
+        ->toContain('No,Tanggal,"Tahun Periode","Nama Dokter","Nama Obat","Nama Principle"')
+        ->not->toContain('Waktu Input')
+        ->toContain('03/11/2026')
         ->toContain("'=CMD(\"\"calc\"\")")
         ->not->toContain('Obat 2025');
 });
@@ -82,6 +84,7 @@ it('exports a valid styled xlsx file matching active filters', function (): void
     @unlink($tmpFile);
 
     expect($allText)->toContain('REKAPITULASI USULAN OBAT FORMULARIUM RS AISYIYAH SITI FATIMAH TULANGAN')
+        ->and($allText)->toContain('03/11/2026')
         ->and($allText)->toContain('dr. Ahmad Nadhir Sp. U. M. Ked. Klin')
         ->and($allText)->toContain('Diarvit 100 Mg Tab')
         ->and($allText)->toContain('Novell');

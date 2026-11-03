@@ -54,7 +54,6 @@ class ProposalExportController extends Controller
                 'Nama Dokter',
                 'Nama Obat',
                 'Nama Principle',
-                'Waktu Input',
             ]);
 
             $query = ProposalItemRecapQuery::build($filters);
@@ -62,14 +61,17 @@ class ProposalExportController extends Controller
 
             $query->chunk(250, function ($items) use ($handle, &$no): void {
                 foreach ($items as $item) {
+                    $principal = $item->principal_name !== null
+                        ? SpreadsheetSanitizer::sanitizeCell($item->principal_name)
+                        : '-';
+
                     fputcsv($handle, [
                         $no++,
-                        Carbon::parse($item->proposal_date)->format('Y-m-d'),
+                        Carbon::parse($item->proposal_date)->format('d/m/Y'),
                         $item->period_year,
                         SpreadsheetSanitizer::sanitizeCell($item->doctor_name),
                         SpreadsheetSanitizer::sanitizeCell($item->medicine_name),
-                        SpreadsheetSanitizer::sanitizeCell($item->principal_name),
-                        $item->created_at ? $item->created_at->format('Y-m-d H:i:s') : '',
+                        $principal,
                     ]);
                 }
             });
