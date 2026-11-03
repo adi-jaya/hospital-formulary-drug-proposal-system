@@ -283,6 +283,12 @@
                         <p class="text-[10px] text-slate-400 mt-1.5">
                             Tempelkan rumus di atas pada sel <code>A1</code> di lembar Google Sheets Anda.
                         </p>
+                        <div class="mt-2.5 p-2.5 bg-amber-50 rounded-lg border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-2">
+                            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span><strong>Tips Kolom Tanggal:</strong> Jika Google Sheets menampilkan angka seri (seperti <code>46340</code>), cukup blok <strong>Kolom B</strong> &rarr; buka menu <strong>Format &gt; Angka &gt; Tanggal</strong>.</span>
+                        </div>
                     </div>
 
                     <!-- Excel Guide -->
