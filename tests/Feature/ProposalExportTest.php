@@ -86,3 +86,37 @@ it('exports a valid styled xlsx file matching active filters', function (): void
         ->and($allText)->toContain('Diarvit 100 Mg Tab')
         ->and($allText)->toContain('Novell');
 });
+
+it('exports null principal_name as dash without escaping it to apostrophe dash in xlsx', function (): void {
+    $proposal = Proposal::create([
+        'doctor_name' => 'dr. Budi Sp.An',
+        'proposal_date' => '2026-11-03',
+        'period_year' => 2026,
+    ]);
+    $proposal->items()->create([
+        'medicine_name' => 'Paracetamol Drop',
+        'principal_name' => null,
+    ]);
+
+    $response = $this->get(route('exports.proposals.xlsx'))->assertOk();
+
+    $tmpFile = tempnam(sys_get_temp_dir(), 'formulary_null_test_').'.xlsx';
+    file_put_contents($tmpFile, $response->streamedContent());
+
+    $reader = new Reader;
+    $reader->open($tmpFile);
+
+    $allCells = [];
+    foreach ($reader->getSheetIterator() as $sheet) {
+        foreach ($sheet->getRowIterator() as $row) {
+            foreach ($row->toArray() as $cellValue) {
+                $allCells[] = (string) $cellValue;
+            }
+        }
+    }
+    $reader->close();
+    @unlink($tmpFile);
+
+    expect($allCells)->toContain('-')
+        ->and($allCells)->not->toContain("'-");
+});

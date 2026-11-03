@@ -97,7 +97,9 @@ class ProposalExportService
 
         $query->chunk(250, function ($items) use ($writer, $dataStyle, &$no): void {
             foreach ($items as $item) {
-                $principal = $item->principal_name ?? '-';
+                $principal = $item->principal_name !== null
+                    ? SpreadsheetSanitizer::sanitizeCell($item->principal_name)
+                    : '-';
 
                 $writer->addRow(Row::fromValues([
                     $no++,
@@ -105,7 +107,7 @@ class ProposalExportService
                     $item->period_year,
                     SpreadsheetSanitizer::sanitizeCell($item->doctor_name),
                     SpreadsheetSanitizer::sanitizeCell($item->medicine_name),
-                    SpreadsheetSanitizer::sanitizeCell($principal),
+                    $principal,
                 ], $dataStyle));
             }
         });

@@ -97,20 +97,24 @@ class AutocompleteService
         $escaped = addcslashes($cleanQuery, '%_');
 
         $refQuery = ReferenceMedicine::query()
+            ->select('principal_name')
+            ->distinct()
             ->whereNotNull('principal_name')
             ->where('principal_name', '!=', '');
         if ($escaped !== '') {
             $refQuery->where('principal_name', 'like', "%{$escaped}%");
         }
-        $refPrincipals = $refQuery->pluck('principal_name')->all();
+        $refPrincipals = $refQuery->limit(50)->pluck('principal_name')->all();
 
         $itemQuery = ProposalItem::query()
+            ->select('principal_name')
+            ->distinct()
             ->whereNotNull('principal_name')
             ->where('principal_name', '!=', '');
         if ($escaped !== '') {
             $itemQuery->where('principal_name', 'like', "%{$escaped}%");
         }
-        $itemPrincipals = $itemQuery->pluck('principal_name')->all();
+        $itemPrincipals = $itemQuery->limit(100)->pluck('principal_name')->all();
 
         /** @var array<string, string> $principalsMap */
         $principalsMap = [];

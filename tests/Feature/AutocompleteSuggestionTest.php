@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Proposal;
 use App\Models\ReferenceMedicine;
+use App\Services\AutocompleteService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -57,4 +58,24 @@ it('returns distinct non-empty principals matching query with prefix priority', 
     $response = $this->getJson(route('suggestions.principals', ['q' => 'sa']))->assertOk();
 
     expect($response->json('data'))->toBe(['Sanbe']);
+});
+
+it('bounds principal suggestions to limit parameter and queries distinct values', function (): void {
+    $proposal = Proposal::create([
+        'doctor_name' => 'dr. Budi Sp.An',
+        'proposal_date' => '2026-11-03',
+        'period_year' => 2026,
+    ]);
+
+    for ($i = 1; $i <= 25; $i++) {
+        $proposal->items()->create([
+            'medicine_name' => "Medicine {$i}",
+            'principal_name' => 'Principal '.str_pad((string) $i, 2, '0', STR_PAD_LEFT),
+        ]);
+    }
+
+    $service = app(AutocompleteService::class);
+    $suggestions = $service->suggestPrincipals('', limit: 10);
+
+    expect($suggestions)->toHaveCount(10);
 });
