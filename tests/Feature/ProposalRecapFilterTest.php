@@ -60,3 +60,27 @@ it('displays flattened proposal items and filters by period_year, doctor, princi
         ->assertSee('Norevell 250 Ml')
         ->assertDontSee('Anazinc Sirup');
 });
+
+it('renders custom select components instead of native select tags for doctor and principal filters', function (): void {
+    $proposal = Proposal::create([
+        'doctor_name' => 'dr. Delfia Rahmat Gozali Sp. A',
+        'proposal_date' => '2026-11-02',
+        'period_year' => 2026,
+    ]);
+    $proposal->items()->create(['medicine_name' => 'Anazinc Sirup', 'principal_name' => 'Guardian']);
+
+    $response = $this->get(route('proposals.index', [
+        'doctor' => 'dr. Delfia Rahmat Gozali Sp. A',
+        'principal' => 'Guardian',
+    ]))->assertOk();
+
+    // Verify native select elements are NOT used
+    $response->assertDontSee('<select', false);
+
+    // Verify customSelect Alpine components are initialized
+    $response->assertSee('x-data="customSelect(', false);
+    $response->assertSee("name: 'doctor'", false);
+    $response->assertSee("name: 'principal'", false);
+    $response->assertSee("value: 'dr. Delfia Rahmat Gozali Sp. A'", false);
+    $response->assertSee("value: 'Guardian'", false);
+});

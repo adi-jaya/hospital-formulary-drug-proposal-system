@@ -313,6 +313,95 @@ Alpine.data('principalAutocomplete', (item) => ({
     },
 }));
 
+Alpine.data('customSelect', (config) => ({
+    isOpen: false,
+    value: config.value || '',
+    options: config.options || [],
+    search: '',
+    highlightedIndex: -1,
+
+    init() {
+        this.$watch('isOpen', (val) => {
+            if (val) {
+                this.search = '';
+                this.highlightedIndex = -1;
+                this.$nextTick(() => {
+                    if (this.$refs.searchInput) {
+                        this.$refs.searchInput.focus();
+                    }
+                });
+            }
+        });
+    },
+
+    get filteredOptions() {
+        const q = this.search.trim().toLowerCase();
+        if (!q) return this.options;
+        return this.options.filter((opt) => {
+            const label = typeof opt === 'string' ? opt : (opt.label || opt.value || '');
+            return label.toLowerCase().includes(q);
+        });
+    },
+
+    get selectedLabel() {
+        if (!this.value) return config.placeholder || 'Pilih...';
+        const found = this.options.find((opt) => {
+            const val = typeof opt === 'string' ? opt : opt.value;
+            return val === this.value;
+        });
+        if (!found) return this.value;
+        return typeof found === 'string' ? found : found.label;
+    },
+
+    select(val) {
+        this.value = val;
+        this.isOpen = false;
+        this.search = '';
+        this.highlightedIndex = -1;
+    },
+
+    clear() {
+        this.value = '';
+        this.isOpen = false;
+        this.search = '';
+        this.highlightedIndex = -1;
+    },
+
+    navigateDown() {
+        const list = this.filteredOptions;
+        if (this.highlightedIndex < list.length - 1) {
+            this.highlightedIndex++;
+            this.scrollToHighlighted();
+        }
+    },
+
+    navigateUp() {
+        if (this.highlightedIndex > 0) {
+            this.highlightedIndex--;
+            this.scrollToHighlighted();
+        }
+    },
+
+    selectHighlighted() {
+        const list = this.filteredOptions;
+        if (this.highlightedIndex >= 0 && list[this.highlightedIndex]) {
+            const item = list[this.highlightedIndex];
+            this.select(typeof item === 'string' ? item : item.value);
+        }
+    },
+
+    scrollToHighlighted() {
+        this.$nextTick(() => {
+            const listEl = this.$refs.optionsList;
+            if (!listEl) return;
+            const highlightedEl = listEl.querySelector(`[data-index="${this.highlightedIndex}"]`);
+            if (highlightedEl) {
+                highlightedEl.scrollIntoView({ block: 'nearest' });
+            }
+        });
+    },
+}));
+
 window.Alpine = Alpine;
 
 Alpine.start();

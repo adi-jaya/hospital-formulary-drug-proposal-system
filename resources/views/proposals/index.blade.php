@@ -86,6 +86,10 @@
         <!-- Filter Bar Card -->
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
             <form method="GET" action="{{ route('proposals.index') }}" class="space-y-4">
+                @if (!empty($filters['period_year']))
+                    <input type="hidden" name="period_year" value="{{ $filters['period_year'] }}">
+                @endif
+
                 <!-- Quick Year Filter Chips -->
                 <div class="flex items-center flex-wrap gap-1.5 pb-2 border-b border-slate-100 text-xs">
                     <span class="font-semibold text-slate-500 mr-1.5">Tahun Periode:</span>
@@ -102,30 +106,26 @@
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <!-- Dropdown Dokter -->
+                    <!-- Dropdown Dokter (Custom Select) -->
                     <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Dokter</label>
-                        <select name="doctor" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden">
-                            <option value="">Semua Dokter</option>
-                            @foreach ($availableDoctors as $doc)
-                                <option value="{{ $doc }}" {{ ($filters['doctor'] ?? '') === $doc ? 'selected' : '' }}>
-                                    {{ $doc }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-custom-select 
+                            name="doctor"
+                            label="Dokter"
+                            :options="$availableDoctors"
+                            :selected="$filters['doctor'] ?? ''"
+                            placeholder="Semua Dokter"
+                            search-placeholder="Cari nama dokter..." />
                     </div>
 
-                    <!-- Dropdown Principle -->
+                    <!-- Dropdown Principle (Custom Select) -->
                     <div>
-                        <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Principle / Pabrik</label>
-                        <select name="principal" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden">
-                            <option value="">Semua Principle</option>
-                            @foreach ($availablePrincipals as $pr)
-                                <option value="{{ $pr }}" {{ ($filters['principal'] ?? '') === $pr ? 'selected' : '' }}>
-                                    {{ $pr }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <x-custom-select 
+                            name="principal"
+                            label="Principle / Pabrik"
+                            :options="$availablePrincipals"
+                            :selected="$filters['principal'] ?? ''"
+                            placeholder="Semua Principle"
+                            search-placeholder="Cari principle / pabrik..." />
                     </div>
 
                     <!-- Dari Tanggal -->
