@@ -2,7 +2,7 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 
 Alpine.data('proposalForm', () => {
-    let initialData = { initialItems: [], initialDoctor: '', doctorsList: [] };
+    let initialData = { initialItems: [], initialDoctor: '' };
     const dataElement = document.getElementById('proposal-form-data');
     if (dataElement && dataElement.textContent) {
         try {
@@ -22,24 +22,76 @@ Alpine.data('proposalForm', () => {
 
     return {
         doctorInput: initialData.initialDoctor || '',
-        doctors: initialData.doctorsList || [],
+        doctorSuggestions: [],
+        doctorIsOpen: false,
+        doctorLoading: false,
+        doctorHighlightedIndex: -1,
+        doctorDebounceTimer: null,
         items: initialItems,
         submitting: false,
 
-        get filteredDoctors() {
-            const q = this.doctorInput.trim().toLowerCase();
-            if (!q) return this.doctors.slice(0, 20);
-            return this.doctors
-                .filter(
-                    (d) =>
-                        d.name.toLowerCase().includes(q) ||
-                        (d.clinic && d.clinic.toLowerCase().includes(q))
-                )
-                .slice(0, 20);
+        handleDoctorInput(e) {
+            const val = e.target.value.trim();
+            this.doctorHighlightedIndex = -1;
+            if (val.length < 1) {
+                this.doctorSuggestions = [];
+                this.doctorIsOpen = false;
+                this.doctorLoading = false;
+                return;
+            }
+            this.doctorLoading = true;
+            this.doctorIsOpen = true;
+            clearTimeout(this.doctorDebounceTimer);
+            this.doctorDebounceTimer = setTimeout(() => {
+                fetch(`/api/suggestions/doctors?q=${encodeURIComponent(val)}`)
+                    .then((res) => res.json())
+                    .then((json) => {
+                        this.doctorSuggestions = json.data || [];
+                        this.doctorLoading = false;
+                        this.doctorIsOpen = true;
+                    })
+                    .catch(() => {
+                        this.doctorSuggestions = [];
+                        this.doctorLoading = false;
+                    });
+            }, 200);
+        },
+
+        navigateDoctorDown() {
+            if (!this.doctorIsOpen) return;
+            const max = this.doctorSuggestions.length - 1;
+            if (this.doctorHighlightedIndex < max) {
+                this.doctorHighlightedIndex++;
+            }
+        },
+
+        navigateDoctorUp() {
+            if (!this.doctorIsOpen) return;
+            if (this.doctorHighlightedIndex > 0) {
+                this.doctorHighlightedIndex--;
+            }
+        },
+
+        selectDoctorHighlighted() {
+            if (
+                this.doctorHighlightedIndex >= 0 &&
+                this.doctorSuggestions[this.doctorHighlightedIndex]
+            ) {
+                this.selectDoctor(this.doctorSuggestions[this.doctorHighlightedIndex].name);
+            } else if (this.doctorInput.trim() !== '') {
+                this.doctorIsOpen = false;
+            }
         },
 
         selectDoctor(name) {
             this.doctorInput = name;
+            this.doctorIsOpen = false;
+            this.doctorHighlightedIndex = -1;
+        },
+
+        closeDoctorDropdown() {
+            this.doctorIsOpen = false;
+            this.doctorHighlightedIndex = -1;
         },
 
         addItem() {

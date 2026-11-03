@@ -19,10 +19,11 @@ class DoctorDirectoryService
 
     /**
      * Lists active doctors from API/snapshot merged with proposals.
+     * Optionally filtered by query.
      *
      * @return list<array{name: string, clinic: ?string}>
      */
-    public function listDoctors(): array
+    public function listDoctors(?string $query = null): array
     {
         $baseDoctors = $this->resolveBaseDoctors();
 
@@ -65,6 +66,32 @@ class DoctorDirectoryService
         }
 
         $result = array_values($merged);
+
+        if ($query !== null && trim($query) !== '') {
+            $cleanQ = TextNormalizer::collapseWhitespace($query);
+            $qLower = mb_strtolower($cleanQ);
+
+            $result = array_values(array_filter($result, function (array $doc) use ($qLower): bool {
+                $nameMatch = str_contains(mb_strtolower($doc['name']), $qLower);
+                $clinicMatch = ! empty($doc['clinic']) && str_contains(mb_strtolower($doc['clinic']), $qLower);
+
+                return $nameMatch || $clinicMatch;
+            }));
+
+            usort($result, function (array $a, array $b) use ($qLower): int {
+                $aPrefix = str_starts_with(mb_strtolower($a['name']), $qLower);
+                $bPrefix = str_starts_with(mb_strtolower($b['name']), $qLower);
+
+                if ($aPrefix !== $bPrefix) {
+                    return $aPrefix ? -1 : 1;
+                }
+
+                return strcasecmp($a['name'], $b['name']);
+            });
+
+            return $result;
+        }
+
         usort($result, fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
 
         return $result;

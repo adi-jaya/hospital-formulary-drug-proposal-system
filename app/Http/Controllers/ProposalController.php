@@ -6,7 +6,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProposalRequest;
 use App\Models\Proposal;
-use App\Services\DoctorDirectoryService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -18,11 +17,9 @@ class ProposalController extends Controller
     /**
      * Show the formulary proposal creation form.
      */
-    public function create(DoctorDirectoryService $doctorService): View
+    public function create(): View
     {
-        $doctors = $doctorService->listDoctors();
-
-        return view('proposals.create', compact('doctors'));
+        return view('proposals.create');
     }
 
     /**

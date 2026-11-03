@@ -19,6 +19,7 @@ Route::prefix('exports')->group(function (): void {
 });
 
 Route::prefix('api/suggestions')->group(function (): void {
+    Route::get('/doctors', [SuggestionController::class, 'doctors'])->name('suggestions.doctors');
     Route::get('/medicines', [SuggestionController::class, 'medicines'])->name('suggestions.medicines');
     Route::get('/principals', [SuggestionController::class, 'principals'])->name('suggestions.principals');
 });

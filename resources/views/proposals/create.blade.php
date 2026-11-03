@@ -4,7 +4,6 @@
         {!! json_encode([
             'initialItems' => old('items', [['medicine_name' => '', 'principal_name' => '']]),
             'initialDoctor' => old('doctor_name', ''),
-            'doctorsList' => $doctors,
         ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}
     </script>
 
@@ -71,8 +70,8 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <!-- Searchable Doctor Combobox -->
-                    <div class="relative" x-data="{ open: false, search: '' }" @click.outside="open = false">
+                    <!-- Searchable Doctor Combobox with Remote Debounce -->
+                    <div class="relative" @click.outside="closeDoctorDropdown()">
                         <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
                             Nama Dokter <span class="text-rose-500">*</span>
                         </label>
@@ -80,37 +79,46 @@
                         <div class="relative">
                             <input type="text"
                                    x-model="doctorInput"
-                                   @focus="open = true"
-                                   @input="open = true"
-                                   placeholder="Cari nama dokter atau klinik..."
+                                   @focus="if (doctorSuggestions.length > 0) doctorIsOpen = true"
+                                   @input="handleDoctorInput($event)"
+                                   @keydown.arrow-down.prevent="navigateDoctorDown()"
+                                   @keydown.arrow-up.prevent="navigateDoctorUp()"
+                                   @keydown.enter.prevent="selectDoctorHighlighted()"
+                                   @keydown.escape="closeDoctorDropdown()"
+                                   placeholder="Ketik nama dokter atau klinik untuk mencari..."
                                    autocomplete="off"
                                    class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden transition-all @error('doctor_name') border-rose-500 bg-rose-50/30 @enderror">
                             
                             <input type="hidden" name="doctor_name" :value="doctorInput">
 
                             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                <svg x-show="!doctorLoading" class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                                <svg x-show="doctorLoading" class="w-4 h-4 animate-spin text-emerald-600" fill="none" viewBox="0 0 24 24" style="display: none;">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
                                 </svg>
                             </div>
                         </div>
 
                         <!-- Doctor Dropdown Menu -->
-                        <div x-show="open" 
+                        <div x-show="doctorIsOpen && (doctorSuggestions.length > 0 || (doctorInput.trim() !== '' && !doctorLoading))" 
                              x-transition.opacity.duration.150ms
                              class="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl border border-slate-200 focus:outline-hidden"
                              style="display: none;">
-                            <template x-for="doc in filteredDoctors" :key="doc.name">
-                                <div @click="selectDoctor(doc.name); open = false"
+                            <template x-for="(doc, dIdx) in doctorSuggestions" :key="doc.name">
+                                <div @click="selectDoctor(doc.name)"
+                                     :class="{ 'bg-emerald-50 text-emerald-900': doctorHighlightedIndex === dIdx }"
                                      class="cursor-pointer px-3.5 py-2 hover:bg-emerald-50 hover:text-emerald-900 transition-colors flex items-center justify-between gap-2 border-b border-slate-50 last:border-b-0">
                                     <span class="font-medium text-slate-800" x-text="doc.name"></span>
                                     <span x-show="doc.clinic" class="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full" x-text="doc.clinic"></span>
                                 </div>
                             </template>
 
-                            <div x-show="filteredDoctors.length === 0 && doctorInput.trim() !== ''" class="p-2">
+                            <div x-show="doctorSuggestions.length === 0 && doctorInput.trim() !== '' && !doctorLoading" class="p-2">
                                 <button type="button" 
-                                        @click="selectDoctor(doctorInput); open = false"
+                                        @click="selectDoctor(doctorInput)"
                                         class="w-full text-left px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
                                     + Gunakan nama dokter: "<span x-text="doctorInput"></span>"
                                 </button>

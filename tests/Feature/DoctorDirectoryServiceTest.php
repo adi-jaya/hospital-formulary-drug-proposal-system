@@ -93,3 +93,39 @@ it('merges manual non-polyclinic doctors from proposals without case-insensitive
             'dr. Delfia Rahmat Gozali Sp. A',
         ]);
 });
+
+it('filters doctors matching query by name or clinic', function (): void {
+    Storage::disk('local')->put('doctors_snapshot.json', json_encode([
+        ['name' => 'dr. Ahmad Nadhir Sp. U. M. Ked. Klin', 'clinic' => 'Klinik Spesialis Urologi'],
+        ['name' => 'dr. Delfia Rahmat Gozali Sp. A', 'clinic' => 'Klinik Spesialis Anak'],
+    ], JSON_THROW_ON_ERROR));
+    Http::fake(['*' => Http::response([], 500)]);
+
+    $byName = app(DoctorDirectoryService::class)->listDoctors('nadhir');
+    expect($byName)->toHaveCount(1)
+        ->and($byName[0]['name'])->toBe('dr. Ahmad Nadhir Sp. U. M. Ked. Klin');
+
+    $byClinic = app(DoctorDirectoryService::class)->listDoctors('anak');
+    expect($byClinic)->toHaveCount(1)
+        ->and($byClinic[0]['name'])->toBe('dr. Delfia Rahmat Gozali Sp. A');
+});
+
+it('provides json suggestions for doctors via endpoint only when query is provided', function (): void {
+    Storage::disk('local')->put('doctors_snapshot.json', json_encode([
+        ['name' => 'dr. Ahmad Nadhir Sp. U. M. Ked. Klin', 'clinic' => 'Klinik Spesialis Urologi'],
+        ['name' => 'dr. Delfia Rahmat Gozali Sp. A', 'clinic' => 'Klinik Spesialis Anak'],
+    ], JSON_THROW_ON_ERROR));
+    Http::fake(['*' => Http::response([], 500)]);
+
+    // When query is empty, do not return all doctors by default
+    $emptyResponse = $this->getJson(route('suggestions.doctors'))->assertOk();
+    expect($emptyResponse->json('data'))->toBe([]);
+
+    $blankResponse = $this->getJson(route('suggestions.doctors', ['q' => '   ']))->assertOk();
+    expect($blankResponse->json('data'))->toBe([]);
+
+    // When query matches, return filtered doctors
+    $response = $this->getJson(route('suggestions.doctors', ['q' => 'ahmad']))->assertOk();
+    expect($response->json('data'))->toHaveCount(1)
+        ->and($response->json('data.0.name'))->toBe('dr. Ahmad Nadhir Sp. U. M. Ked. Klin');
+});

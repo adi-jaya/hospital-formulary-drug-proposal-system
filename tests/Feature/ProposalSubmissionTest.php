@@ -25,11 +25,11 @@ beforeEach(function (): void {
     ]);
 });
 
-it('renders the proposal form with injected doctor list and today default date', function (): void {
+it('renders the proposal form with today default date', function (): void {
     $this->get(route('proposals.create'))
         ->assertOk()
         ->assertSee('Formulir Usulan Obat Formularium')
-        ->assertSee('dr. Ahmad Nadhir Sp. U. M. Ked. Klin')
+        ->assertSee('Nama Dokter')
         ->assertSee(now()->toDateString());
 });
 
