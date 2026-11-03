@@ -27,6 +27,7 @@
 @endphp
 
 <div class="relative" 
+     :class="{ 'z-50': isOpen, 'z-10': !isOpen }"
      x-data="customSelect({
          name: @js($name),
          value: @js($selectedVal),
@@ -44,40 +45,49 @@
     <!-- Hidden Input for Form Submission -->
     <input type="hidden" name="{{ $name }}" value="{{ $selectedVal }}" :value="value">
 
-    <!-- Trigger Button -->
-    <div class="relative">
+    <!-- Trigger Box -->
+    <div class="relative flex items-center w-full h-[38px] rounded-xl border border-slate-300 bg-white hover:border-slate-400 focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all shadow-2xs">
+        <!-- Main Clickable Text Area -->
         <button type="button"
                 @click="isOpen = !isOpen"
                 @keydown.arrow-down.prevent="isOpen = true; $nextTick(() => $refs.searchInput?.focus())"
                 @keydown.arrow-up.prevent="isOpen = true; $nextTick(() => $refs.searchInput?.focus())"
                 @keydown.escape="isOpen = false"
-                class="w-full flex items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-left text-slate-800 hover:border-slate-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-500/20 focus:outline-hidden transition-all shadow-2xs">
-            <span class="truncate block pr-2" 
+                class="flex-1 flex items-center h-full px-3 text-xs text-left text-slate-800 focus:outline-hidden min-w-0">
+            <span class="truncate block w-full" 
                   :class="{ 'text-slate-400 font-normal': !value, 'text-slate-900 font-medium': value }"
                   x-text="selectedLabel">
                 {{ $initialLabel }}
             </span>
+        </button>
 
-            <div class="flex items-center gap-1 shrink-0 text-slate-400">
-                <!-- Clear Button if value is set -->
-                <button type="button" 
-                        x-show="value" 
-                        @click.stop="clear()" 
-                        title="Hapus pilihan"
-                        class="p-0.5 rounded-full hover:bg-slate-100 hover:text-slate-600 transition-colors">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+        <!-- Right Side Actions: Clear & Chevron (Sibling Elements, NOT inside button) -->
+        <div class="flex items-center gap-1 pr-2.5 shrink-0 text-slate-400">
+            <!-- Clear Button -->
+            <button type="button" 
+                    x-show="value" 
+                    x-cloak
+                    style="display: none;"
+                    @click.stop="clear()" 
+                    title="Hapus pilihan"
+                    class="p-0.5 rounded-full hover:bg-slate-100 hover:text-slate-600 transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
 
-                <!-- Chevron Icon -->
+            <!-- Chevron Toggle Button -->
+            <button type="button"
+                    @click="isOpen = !isOpen"
+                    tabindex="-1"
+                    class="p-0.5 text-slate-400 hover:text-slate-600 focus:outline-hidden">
                 <svg class="w-4 h-4 transition-transform duration-200" 
                      :class="{ 'rotate-180 text-emerald-600': isOpen }" 
                      fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
-            </div>
-        </button>
+            </button>
+        </div>
     </div>
 
     <!-- Dropdown Menu -->
@@ -88,7 +98,7 @@
          x-transition:leave="transition ease-in duration-100"
          x-transition:leave-start="opacity-100 translate-y-0 scale-100"
          x-transition:leave-end="opacity-0 translate-y-1 scale-98"
-         class="absolute z-30 mt-1.5 w-full min-w-[200px] rounded-xl bg-white border border-slate-200 shadow-xl overflow-hidden focus:outline-hidden"
+         class="absolute left-0 right-0 z-50 mt-1.5 w-full rounded-xl bg-white border border-slate-200 shadow-xl overflow-hidden focus:outline-hidden"
          style="display: none;">
         
         <!-- Search Input inside Dropdown -->
@@ -126,7 +136,7 @@
             </div>
 
             <!-- Filtered Options Template -->
-            <template x-for="(opt, idx) in filteredOptions" :key="opt.value">
+            <template x-for="(opt, idx) in filteredOptions" :key="opt.value + '_' + idx">
                 <div @click="select(opt.value)"
                      :data-index="idx"
                      class="px-3 py-2 cursor-pointer flex items-center justify-between transition-colors border-t border-slate-50"

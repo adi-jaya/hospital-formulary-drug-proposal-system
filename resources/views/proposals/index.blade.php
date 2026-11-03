@@ -84,7 +84,7 @@
         </div>
 
         <!-- Filter Bar Card -->
-        <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
+        <div class="relative z-20 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
             <form method="GET" action="{{ route('proposals.index') }}" class="space-y-4">
                 @if (!empty($filters['period_year']))
                     <input type="hidden" name="period_year" value="{{ $filters['period_year'] }}">
@@ -105,44 +105,40 @@
                     @endforeach
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 relative z-20">
                     <!-- Dropdown Dokter (Custom Select) -->
-                    <div>
-                        <x-custom-select 
-                            name="doctor"
-                            label="Dokter"
-                            :options="$availableDoctors"
-                            :selected="$filters['doctor'] ?? ''"
-                            placeholder="Semua Dokter"
-                            search-placeholder="Cari nama dokter..." />
-                    </div>
+                    <x-custom-select 
+                        name="doctor"
+                        label="Dokter"
+                        :options="$availableDoctors"
+                        :selected="$filters['doctor'] ?? ''"
+                        placeholder="Semua Dokter"
+                        search-placeholder="Cari nama dokter..." />
 
                     <!-- Dropdown Principle (Custom Select) -->
-                    <div>
-                        <x-custom-select 
-                            name="principal"
-                            label="Principle / Pabrik"
-                            :options="$availablePrincipals"
-                            :selected="$filters['principal'] ?? ''"
-                            placeholder="Semua Principle"
-                            search-placeholder="Cari principle / pabrik..." />
-                    </div>
+                    <x-custom-select 
+                        name="principal"
+                        label="Principle / Pabrik"
+                        :options="$availablePrincipals"
+                        :selected="$filters['principal'] ?? ''"
+                        placeholder="Semua Principle"
+                        search-placeholder="Cari principle / pabrik..." />
 
                     <!-- Dari Tanggal -->
                     <div>
                         <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Dari Tanggal</label>
-                        <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden">
+                        <input type="date" name="date_from" value="{{ $filters['date_from'] ?? '' }}" class="w-full h-[38px] rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden">
                     </div>
 
                     <!-- Sampai Tanggal -->
                     <div>
                         <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Sampai Tanggal</label>
-                        <input type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden">
+                        <input type="date" name="date_to" value="{{ $filters['date_to'] ?? '' }}" class="w-full h-[38px] rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-800 focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden">
                     </div>
                 </div>
 
                 <!-- Baris Pencarian Kata Kunci & Tombol Filter -->
-                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 relative z-10">
                     <div class="w-full sm:flex-1 relative">
                         <input type="text" 
                                name="search" 
