@@ -1,9 +1,14 @@
 <x-layout :title="'Formulir Usulan Obat Formularium'" :activeTab="'form'">
-    <div class="space-y-6" x-data="proposalForm({
-        initialItems: @json(old('items', [['medicine_name' => '', 'principal_name' => '']])),
-        initialDoctor: @json(old('doctor_name', '')),
-        doctorsList: @json($doctors)
-    })">
+    <!-- Safe JSON Data Carrier for Alpine Component (prevents HTML attribute quote truncation) -->
+    <script id="proposal-form-data" type="application/json">
+        {!! json_encode([
+            'initialItems' => old('items', [['medicine_name' => '', 'principal_name' => '']]),
+            'initialDoctor' => old('doctor_name', ''),
+            'doctorsList' => $doctors,
+        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}
+    </script>
+
+    <div class="space-y-6" x-data="proposalForm">
 
         <!-- Flash Success Summary Notification -->
         @if (session('submitted_summary'))
@@ -172,7 +177,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Medicine Autocomplete -->
                                 <div class="relative" 
-                                     x-data="medicineAutocomplete(index)"
+                                     x-data="medicineAutocomplete(item)"
                                      @click.outside="isOpen = false">
                                     <label class="block text-xs font-medium text-slate-700 mb-1">
                                         Nama Obat & Bentuk Sediaan <span class="text-rose-500">*</span>
@@ -208,7 +213,7 @@
 
                                 <!-- Principal Autocomplete -->
                                 <div class="relative" 
-                                     x-data="principalAutocomplete(index)"
+                                     x-data="principalAutocomplete(item)"
                                      @click.outside="isOpen = false">
                                     <label class="block text-xs font-medium text-slate-700 mb-1">
                                         Nama Principle / Pabrik <span class="text-slate-400 text-[11px] font-normal">(Opsional)</span>
@@ -271,161 +276,4 @@
             </div>
         </form>
     </div>
-
-    <!-- Client Script for Alpine.js Form Logic -->
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('proposalForm', ({ initialItems, initialDoctor, doctorsList }) => ({
-                doctorInput: initialDoctor || '',
-                doctors: doctorsList || [],
-                items: initialItems.length ? initialItems.map(it => ({
-                    medicine_name: it.medicine_name || '',
-                    principal_name: it.principal_name || '',
-                    autoFilled: false
-                })) : [{ medicine_name: '', principal_name: '', autoFilled: false }],
-                submitting: false,
-
-                get filteredDoctors() {
-                    const q = this.doctorInput.trim().toLowerCase();
-                    if (!q) return this.doctors.slice(0, 20);
-                    return this.doctors.filter(d => 
-                        d.name.toLowerCase().includes(q) || 
-                        (d.clinic && d.clinic.toLowerCase().includes(q))
-                    ).slice(0, 20);
-                },
-
-                selectDoctor(name) {
-                    this.doctorInput = name;
-                },
-
-                addItem() {
-                    if (this.items.length < 50) {
-                        this.items.push({ medicine_name: '', principal_name: '', autoFilled: false });
-                    }
-                },
-
-                removeItem(index) {
-                    if (this.items.length > 1) {
-                        this.items.splice(index, 1);
-                    }
-                }
-            }));
-
-            Alpine.data('medicineAutocomplete', (index) => ({
-                isOpen: false,
-                suggestions: [],
-                highlightedIndex: -1,
-                debounceTimer: null,
-
-                handleInput(e) {
-                    const val = e.target.value.trim();
-                    this.highlightedIndex = -1;
-                    if (val.length < 1) {
-                        this.suggestions = [];
-                        this.isOpen = false;
-                        return;
-                    }
-                    clearTimeout(this.debounceTimer);
-                    this.debounceTimer = setTimeout(() => {
-                        fetch(`/api/suggestions/medicines?q=${encodeURIComponent(val)}`)
-                            .then(res => res.json())
-                            .then(json => {
-                                this.suggestions = json.data || [];
-                                this.isOpen = this.suggestions.length > 0;
-                            })
-                            .catch(() => {
-                                this.suggestions = [];
-                                this.isOpen = false;
-                            });
-                    }, 180);
-                },
-
-                navigateDown() {
-                    if (!this.isOpen) return;
-                    if (this.highlightedIndex < this.suggestions.length - 1) {
-                        this.highlightedIndex++;
-                    }
-                },
-
-                navigateUp() {
-                    if (!this.isOpen) return;
-                    if (this.highlightedIndex > 0) {
-                        this.highlightedIndex--;
-                    }
-                },
-
-                selectHighlighted() {
-                    if (this.highlightedIndex >= 0 && this.suggestions[this.highlightedIndex]) {
-                        this.pick(this.suggestions[this.highlightedIndex]);
-                    }
-                },
-
-                pick(sug) {
-                    this.items[index].medicine_name = sug.medicine_name;
-                    if (sug.principal_name && (!this.items[index].principal_name || this.items[index].autoFilled)) {
-                        this.items[index].principal_name = sug.principal_name;
-                        this.items[index].autoFilled = true;
-                    }
-                    this.isOpen = false;
-                }
-            }));
-
-            Alpine.data('principalAutocomplete', (index) => ({
-                isOpen: false,
-                suggestions: [],
-                highlightedIndex: -1,
-                debounceTimer: null,
-
-                handleInput(e) {
-                    this.items[index].autoFilled = false;
-                    const val = e.target.value.trim();
-                    this.highlightedIndex = -1;
-                    if (val.length < 1) {
-                        this.suggestions = [];
-                        this.isOpen = false;
-                        return;
-                    }
-                    clearTimeout(this.debounceTimer);
-                    this.debounceTimer = setTimeout(() => {
-                        fetch(`/api/suggestions/principals?q=${encodeURIComponent(val)}`)
-                            .then(res => res.json())
-                            .then(json => {
-                                this.suggestions = json.data || [];
-                                this.isOpen = this.suggestions.length > 0;
-                            })
-                            .catch(() => {
-                                this.suggestions = [];
-                                this.isOpen = false;
-                            });
-                    }, 180);
-                },
-
-                navigateDown() {
-                    if (!this.isOpen) return;
-                    if (this.highlightedIndex < this.suggestions.length - 1) {
-                        this.highlightedIndex++;
-                    }
-                },
-
-                navigateUp() {
-                    if (!this.isOpen) return;
-                    if (this.highlightedIndex > 0) {
-                        this.highlightedIndex--;
-                    }
-                },
-
-                selectHighlighted() {
-                    if (this.highlightedIndex >= 0 && this.suggestions[this.highlightedIndex]) {
-                        this.pick(this.suggestions[this.highlightedIndex]);
-                    }
-                },
-
-                pick(name) {
-                    this.items[index].principal_name = name;
-                    this.items[index].autoFilled = false;
-                    this.isOpen = false;
-                }
-            }));
-        });
-    </script>
 </x-layout>
