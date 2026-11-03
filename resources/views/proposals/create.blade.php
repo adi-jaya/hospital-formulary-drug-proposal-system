@@ -79,7 +79,7 @@
                         <div class="relative">
                             <input type="text"
                                    x-model="doctorInput"
-                                   @focus="if (doctorSuggestions.length > 0) doctorIsOpen = true"
+                                   @focus="if (doctorInput.trim() !== '' && doctorSuggestions.length > 0) doctorIsOpen = true"
                                    @input="handleDoctorInput($event)"
                                    @keydown.arrow-down.prevent="navigateDoctorDown()"
                                    @keydown.arrow-up.prevent="navigateDoctorUp()"
@@ -103,7 +103,7 @@
                         </div>
 
                         <!-- Doctor Dropdown Menu -->
-                        <div x-show="doctorIsOpen && (doctorSuggestions.length > 0 || (doctorInput.trim() !== '' && !doctorLoading))" 
+                        <div x-show="doctorIsOpen && doctorInput.trim() !== '' && (doctorSuggestions.length > 0 || !doctorLoading)" 
                              x-transition.opacity.duration.150ms
                              class="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-sm shadow-xl border border-slate-200 focus:outline-hidden"
                              style="display: none;">

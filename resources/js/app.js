@@ -27,30 +27,56 @@ Alpine.data('proposalForm', () => {
         doctorLoading: false,
         doctorHighlightedIndex: -1,
         doctorDebounceTimer: null,
+        doctorAbortController: null,
         items: initialItems,
         submitting: false,
 
         handleDoctorInput(e) {
+            clearTimeout(this.doctorDebounceTimer);
+            if (this.doctorAbortController) {
+                this.doctorAbortController.abort();
+                this.doctorAbortController = null;
+            }
+
             const val = e.target.value.trim();
             this.doctorHighlightedIndex = -1;
+
             if (val.length < 1) {
                 this.doctorSuggestions = [];
                 this.doctorIsOpen = false;
                 this.doctorLoading = false;
                 return;
             }
+
             this.doctorLoading = true;
             this.doctorIsOpen = true;
-            clearTimeout(this.doctorDebounceTimer);
+
             this.doctorDebounceTimer = setTimeout(() => {
-                fetch(`/api/suggestions/doctors?q=${encodeURIComponent(val)}`)
+                if (this.doctorInput.trim().length < 1) {
+                    this.doctorSuggestions = [];
+                    this.doctorIsOpen = false;
+                    this.doctorLoading = false;
+                    return;
+                }
+
+                this.doctorAbortController = new AbortController();
+                fetch(`/api/suggestions/doctors?q=${encodeURIComponent(val)}`, {
+                    signal: this.doctorAbortController.signal,
+                })
                     .then((res) => res.json())
                     .then((json) => {
+                        if (this.doctorInput.trim().length < 1) {
+                            this.doctorSuggestions = [];
+                            this.doctorIsOpen = false;
+                            this.doctorLoading = false;
+                            return;
+                        }
                         this.doctorSuggestions = json.data || [];
                         this.doctorLoading = false;
                         this.doctorIsOpen = true;
                     })
-                    .catch(() => {
+                    .catch((err) => {
+                        if (err && err.name === 'AbortError') return;
                         this.doctorSuggestions = [];
                         this.doctorLoading = false;
                     });
@@ -84,9 +110,16 @@ Alpine.data('proposalForm', () => {
         },
 
         selectDoctor(name) {
+            clearTimeout(this.doctorDebounceTimer);
+            if (this.doctorAbortController) {
+                this.doctorAbortController.abort();
+                this.doctorAbortController = null;
+            }
             this.doctorInput = name;
             this.doctorIsOpen = false;
+            this.doctorLoading = false;
             this.doctorHighlightedIndex = -1;
+            this.doctorSuggestions = [];
         },
 
         closeDoctorDropdown() {
@@ -113,8 +146,15 @@ Alpine.data('medicineAutocomplete', (item) => ({
     suggestions: [],
     highlightedIndex: -1,
     debounceTimer: null,
+    abortController: null,
 
     handleInput(e) {
+        clearTimeout(this.debounceTimer);
+        if (this.abortController) {
+            this.abortController.abort();
+            this.abortController = null;
+        }
+
         const val = e.target.value.trim();
         this.highlightedIndex = -1;
         if (val.length < 1) {
@@ -122,15 +162,30 @@ Alpine.data('medicineAutocomplete', (item) => ({
             this.isOpen = false;
             return;
         }
-        clearTimeout(this.debounceTimer);
+
         this.debounceTimer = setTimeout(() => {
-            fetch(`/api/suggestions/medicines?q=${encodeURIComponent(val)}`)
+            if (item.medicine_name.trim().length < 1) {
+                this.suggestions = [];
+                this.isOpen = false;
+                return;
+            }
+
+            this.abortController = new AbortController();
+            fetch(`/api/suggestions/medicines?q=${encodeURIComponent(val)}`, {
+                signal: this.abortController.signal,
+            })
                 .then((res) => res.json())
                 .then((json) => {
+                    if (item.medicine_name.trim().length < 1) {
+                        this.suggestions = [];
+                        this.isOpen = false;
+                        return;
+                    }
                     this.suggestions = json.data || [];
                     this.isOpen = this.suggestions.length > 0;
                 })
-                .catch(() => {
+                .catch((err) => {
+                    if (err && err.name === 'AbortError') return;
                     this.suggestions = [];
                     this.isOpen = false;
                 });
@@ -158,11 +213,17 @@ Alpine.data('medicineAutocomplete', (item) => ({
     },
 
     pick(sug) {
+        clearTimeout(this.debounceTimer);
+        if (this.abortController) {
+            this.abortController.abort();
+            this.abortController = null;
+        }
         item.medicine_name = sug.medicine_name;
         if (sug.principal_name && (!item.principal_name || item.autoFilled)) {
             item.principal_name = sug.principal_name;
             item.autoFilled = true;
         }
+        this.suggestions = [];
         this.isOpen = false;
     },
 }));
@@ -172,8 +233,15 @@ Alpine.data('principalAutocomplete', (item) => ({
     suggestions: [],
     highlightedIndex: -1,
     debounceTimer: null,
+    abortController: null,
 
     handleInput(e) {
+        clearTimeout(this.debounceTimer);
+        if (this.abortController) {
+            this.abortController.abort();
+            this.abortController = null;
+        }
+
         item.autoFilled = false;
         const val = e.target.value.trim();
         this.highlightedIndex = -1;
@@ -182,15 +250,30 @@ Alpine.data('principalAutocomplete', (item) => ({
             this.isOpen = false;
             return;
         }
-        clearTimeout(this.debounceTimer);
+
         this.debounceTimer = setTimeout(() => {
-            fetch(`/api/suggestions/principals?q=${encodeURIComponent(val)}`)
+            if ((item.principal_name || '').trim().length < 1) {
+                this.suggestions = [];
+                this.isOpen = false;
+                return;
+            }
+
+            this.abortController = new AbortController();
+            fetch(`/api/suggestions/principals?q=${encodeURIComponent(val)}`, {
+                signal: this.abortController.signal,
+            })
                 .then((res) => res.json())
                 .then((json) => {
+                    if ((item.principal_name || '').trim().length < 1) {
+                        this.suggestions = [];
+                        this.isOpen = false;
+                        return;
+                    }
                     this.suggestions = json.data || [];
                     this.isOpen = this.suggestions.length > 0;
                 })
-                .catch(() => {
+                .catch((err) => {
+                    if (err && err.name === 'AbortError') return;
                     this.suggestions = [];
                     this.isOpen = false;
                 });
@@ -218,8 +301,14 @@ Alpine.data('principalAutocomplete', (item) => ({
     },
 
     pick(name) {
+        clearTimeout(this.debounceTimer);
+        if (this.abortController) {
+            this.abortController.abort();
+            this.abortController = null;
+        }
         item.principal_name = name;
         item.autoFilled = false;
+        this.suggestions = [];
         this.isOpen = false;
     },
 }));
