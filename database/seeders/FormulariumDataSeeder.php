@@ -8,12 +8,9 @@ use App\Models\Proposal;
 use App\Models\ReferenceMedicine;
 use App\Services\DoctorDirectoryService;
 use App\Services\FormularyCsvImporter;
-use App\Support\SpreadsheetSanitizer;
-use App\Support\TextNormalizer;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use SplFileObject;
 
 class FormulariumDataSeeder extends Seeder
 {
@@ -24,20 +21,20 @@ class FormulariumDataSeeder extends Seeder
         DoctorDirectoryService $doctorService,
         FormularyCsvImporter $importer
     ): void {
-        $csvPath = '/Users/adijaya/Downloads/REKAP FORMULARIUM RS - daftar obat.csv';
-
-        if (! file_exists($csvPath)) {
-            $csvPath = database_path('seeders/data/formulary_medicines.csv');
+        $csvPath = database_path('seeders/data/formulary_medicines.csv');
+        if (file_exists('/Users/adijaya/Downloads/REKAP FORMULARIUM RS - daftar obat.csv')) {
+            $csvPath = '/Users/adijaya/Downloads/REKAP FORMULARIUM RS - daftar obat.csv';
         }
 
-        $this->command?->info("Importing reference medicines from {$csvPath}...");
-
-        // 1. Populate reference medicines table
-        $importer->importFromPath($csvPath);
+        // 1. Ensure reference medicines table is populated
+        if (ReferenceMedicine::count() === 0) {
+            $this->command?->info("Importing reference medicines from {$csvPath}...");
+            $importer->importFromPath($csvPath);
+        }
         $totalRef = ReferenceMedicine::count();
         $this->command?->info("Reference medicines ready ({$totalRef} rows).");
 
-        // 2. Fetch doctors from API
+        // 2. Fetch active doctors from Portal Sifast / directory
         $this->command?->info('Fetching active doctors from Portal Sifast API...');
         $doctors = $doctorService->listDoctors();
         $doctorNames = array_column($doctors, 'name');
@@ -49,101 +46,127 @@ class FormulariumDataSeeder extends Seeder
                 'dr. Delfia Rahmat Gozali Sp. A',
                 'Dr. dr. M. Fathi Ilmawan Sp.PD. FINASIM',
                 'dr. Faishol Hamdani Sp. N. FINA',
+                'dr. Aira Oklatihana Putri Sp. OG',
+                'dr. Angela Bety Ratnasari Sp. JP. FIHA',
+                'dr. Arief Fidianto Sp. M M. Ked. Klin',
+                'dr. Gagang Guntaran K. M. Ked. Klin. Sp. B',
+                'dr. H. Abdulloh Najich SpP. MM. FISR',
+                'dr. Lesap Heru Farolan Sp.B',
+                'dr. Budi Santoso Sp.An',
+                'dr. Dian Paramita Sp.KK',
+                'dr. Hendra Setiawan Sp.Rad',
+                'dr. Siti Rahmawati Sp.THT-KL',
             ];
         }
 
         $this->command?->info('Found '.count($doctorNames).' doctors.');
 
-        // 3. Parse CSV rows
-        $file = new SplFileObject($csvPath);
-        $file->setFlags(SplFileObject::READ_CSV | SplFileObject::SKIP_EMPTY);
+        // 3. Select exactly 50 distinct medicine items
+        $medicines = ReferenceMedicine::query()
+            ->orderBy('id')
+            ->limit(50)
+            ->get(['medicine_name', 'principal_name'])
+            ->toArray();
 
-        $assignedGroups = [];
-        $unassignedItems = [];
-
-        foreach ($file as $row) {
-            if (! is_array($row) || count($row) < 4) {
-                continue;
-            }
-
-            $rawMedicine = trim((string) ($row[1] ?? ''));
-            $rawPrincipal = trim((string) ($row[3] ?? ''));
-            $rawUser = trim((string) ($row[6] ?? ''));
-
-            if ($rawMedicine === '' || $rawMedicine === 'NAMA OBAT' || str_contains($rawMedicine, 'REKAP')) {
-                continue;
-            }
-
-            $medicineName = SpreadsheetSanitizer::sanitizeCell(TextNormalizer::collapseWhitespace($rawMedicine));
-            $principalName = TextNormalizer::normalizePrincipal($rawPrincipal);
-            if ($principalName !== null) {
-                $principalName = SpreadsheetSanitizer::sanitizeCell($principalName);
-            }
-
-            $item = [
-                'medicine_name' => $medicineName,
-                'principal_name' => $principalName,
-            ];
-
-            if ($rawUser !== '') {
-                $userLines = preg_split('/\r\n|\n|\r/', $rawUser) ?: [];
-                foreach ($userLines as $userLine) {
-                    $u = trim($userLine);
-                    if ($u === '') {
-                        continue;
-                    }
-
-                    $resolvedDoctor = $this->resolveDoctorName($u, $doctorNames);
-                    $assignedGroups[$resolvedDoctor][] = $item;
-                }
-            } else {
-                $unassignedItems[] = $item;
-            }
+        if (count($medicines) < 50) {
+            $importer->importFromPath($csvPath);
+            $medicines = ReferenceMedicine::query()
+                ->orderBy('id')
+                ->limit(50)
+                ->get(['medicine_name', 'principal_name'])
+                ->toArray();
         }
 
-        // 4. Distribute unassigned items evenly across all active doctors
-        $doctorCount = count($doctorNames);
-        $distributedProposals = $assignedGroups;
+        // 4. Realistic clinical justifications & proposal notes
+        $justifications = [
+            'Efikasi superior untuk terapi lini pertama pasien rawat inap dengan komorbiditas.',
+            'Bioavailabilitas lebih stabil dibanding formularium sebelumnya dan minim efek samping mual.',
+            'Pilihan terapi lini kedua untuk kasus resistensi antimikroba empiris.',
+            'Onset kerja cepat, sangat dibutuhkan untuk penanganan kegawatdaruratan di IGD.',
+            'Formulasi sirup disukai pasien anak dan mempermudah penyesuaian dosis pediatrik.',
+            'Kompatibilitas infus stabil untuk terapi pemeliharaan jangka menengah di ICU.',
+            'Alternatif terapi dengan batas keamanan lebih luas bagi pasien usia lanjut / geriatri.',
+            'Efektivitas klinis setara obat inovator dengan tolerabilitas lambung yang lebih prima.',
+            'Kombinasi dosis tetap mempermudah kepatuhan konsumsi obat pasien kronis rawat jalan.',
+            'Profil keamanan lebih dianjurkan untuk pasien obstetri dan ginekologi trimester II-III.',
+            'Kadar terapeutik darah tercapai lebih cepat dengan risiko interaksi obat yang minimal.',
+            'Sangat dibutuhkan sebagai terapi profilaksis bedah dan pencegahan infeksi nosokomial.',
+            null,
+        ];
 
-        foreach ($doctorNames as $docName) {
-            if (! isset($distributedProposals[$docName])) {
-                $distributedProposals[$docName] = [];
-            }
-        }
+        $proposalNotes = [
+            'Mohon diprioritaskan konfirmasi ketersediaan pasokan dari distributor resmi.',
+            'Diusulkan sebagai substitusi merk sebelumnya yang sering mengalami kekosongan dari pabrikan.',
+            'Ketersediaan distributor PBF lokal terkonfirmasi cepat dan stabil (same-day delivery).',
+            'Harga e-katalog sangat kompetitif dengan mutu dan efikasi setara inovator.',
+            'Rekomendasi tindak lanjut hasil audit medik dan utilisasi obat triwulan sebelumnya.',
+            null,
+        ];
 
-        foreach ($unassignedItems as $idx => $item) {
-            $assignedDoc = $doctorNames[$idx % $doctorCount];
-            $distributedProposals[$assignedDoc][] = $item;
-        }
+        // 5. Partition 50 items across 14 proposals (all dates within November 2026)
+        // Distribution: 4*7 + 3*6 + 4 = 28 + 18 + 4 = exactly 50 items
+        $distribution = [4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 4];
 
-        // 5. Seed Proposals & ProposalItems inside a transaction
-        DB::transaction(function () use ($distributedProposals): void {
-            // Clean existing proposals to allow idempotent seeding
+        // Dates strictly within November 2026
+        $novemberDates = [
+            '2026-11-02',
+            '2026-11-03',
+            '2026-11-05',
+            '2026-11-06',
+            '2026-11-09',
+            '2026-11-10',
+            '2026-11-12',
+            '2026-11-13',
+            '2026-11-16',
+            '2026-11-18',
+            '2026-11-20',
+            '2026-11-23',
+            '2026-11-25',
+            '2026-11-27',
+        ];
+
+        // 6. Seed Proposals & ProposalItems atomically
+        DB::transaction(function () use (
+            $distribution,
+            $medicines,
+            $doctorNames,
+            $novemberDates,
+            $justifications,
+            $proposalNotes
+        ): void {
+            // Clean existing proposals to allow clean idempotent seeding
             DB::statement('DELETE FROM proposal_items');
             DB::statement('DELETE FROM proposals');
 
-            $baseDate = Carbon::parse('2026-11-01');
-            $dayOffset = 0;
+            $medicineIndex = 0;
 
-            foreach ($distributedProposals as $doctorName => $items) {
-                if (empty($items)) {
-                    continue;
-                }
-
-                $proposalDate = $baseDate->copy()->addDays($dayOffset % 14);
-                $dayOffset++;
+            foreach ($distribution as $pIdx => $itemCount) {
+                $doctorName = $doctorNames[$pIdx % count($doctorNames)];
+                $proposalDate = Carbon::parse($novemberDates[$pIdx % count($novemberDates)]);
+                $notes = $proposalNotes[$pIdx % count($proposalNotes)];
 
                 $proposal = Proposal::create([
                     'doctor_name' => $doctorName,
                     'proposal_date' => $proposalDate->toDateString(),
                     'period_year' => (int) $proposalDate->format('Y'),
+                    'notes' => $notes,
                 ]);
 
-                foreach ($items as $item) {
+                for ($i = 0; $i < $itemCount; $i++) {
+                    if (! isset($medicines[$medicineIndex])) {
+                        break;
+                    }
+
+                    $med = $medicines[$medicineIndex];
+                    $justification = $justifications[$medicineIndex % count($justifications)];
+
                     $proposal->items()->create([
-                        'medicine_name' => $item['medicine_name'],
-                        'principal_name' => $item['principal_name'],
+                        'medicine_name' => $med['medicine_name'],
+                        'principal_name' => $med['principal_name'] ?? null,
+                        'clinical_justification' => $justification,
                     ]);
+
+                    $medicineIndex++;
                 }
             }
         });
@@ -151,30 +174,6 @@ class FormulariumDataSeeder extends Seeder
         $totalProposals = Proposal::count();
         $totalItems = DB::table('proposal_items')->count();
 
-        $this->command?->info("Seeding completed successfully! Created {$totalProposals} proposals with {$totalItems} proposal items.");
-    }
-
-    /**
-     * Resolve user string to official doctor name.
-     *
-     * @param  list<string>  $doctorNames
-     */
-    private function resolveDoctorName(string $userString, array $doctorNames): string
-    {
-        $u = trim($userString);
-
-        if (strcasecmp($u, 'dr. fatih') === 0) {
-            return 'Dr. dr. M. Fathi Ilmawan Sp.PD. FINASIM';
-        }
-
-        $clean = preg_replace('/^dr\.?\s*/i', '', $u) ?? '';
-
-        foreach ($doctorNames as $name) {
-            if (stripos($name, $clean) !== false) {
-                return $name;
-            }
-        }
-
-        return $u;
+        $this->command?->info("Seeding completed successfully! Created {$totalProposals} proposals with {$totalItems} proposal items (all within November 2026).");
     }
 }
