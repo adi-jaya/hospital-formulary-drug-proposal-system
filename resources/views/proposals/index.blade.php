@@ -9,7 +9,7 @@
                     Rekapitulasi Usulan Obat Formularium
                 </h2>
                 <p class="text-xs text-slate-500 mt-1">
-                    Seluruh usulan obat dari para dokter tercatat secara real-time untuk ditinjau oleh Tim Farmasi / KFT.
+                    Seluruh usulan obat dari para dokter tercatat secara real-time untuk ditinjau oleh Farmasi.
                 </p>
             </div>
 

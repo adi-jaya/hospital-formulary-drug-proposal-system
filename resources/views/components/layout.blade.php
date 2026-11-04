@@ -32,7 +32,7 @@
                             Formularium Obat RS
                         </h1>
                         <p class="text-xs text-emerald-100 font-medium tracking-wide">
-                            RS Aisyiyah Siti Fatimah Tulangan • Komite Farmasi & Terapi
+                            RS Aisyiyah Siti Fatimah Tulangan • Farmasi
                         </p>
                     </div>
                 </div>

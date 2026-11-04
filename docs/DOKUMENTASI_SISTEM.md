@@ -8,7 +8,7 @@ Dokumen ini menyajikan panduan arsitektur, spesifikasi teknis, mekanisme kerja d
 ## 1. Pendahuluan & Latar Belakang
 
 ### 1.1 Konteks Operasional
-Setiap tahun pada bulan November, Rumah Sakit Aisyiyah Siti Fatimah Tulangan menyelenggarakan siklus peninjauan dan pembaruan Formularium Rumah Sakit melalui Komite Farmasi dan Terapi (KFT). Para Dokter Penanggung Jawab Pelayanan (DPJP) — baik dokter spesialis poliklinik, dokter rawat inap, anestesi, patologi, maupun dokter IGD — mengusulkan obat-obat baru beserta principle pabrikan yang dibutuhkan untuk pelayanan medis satu tahun ke depan.
+Setiap tahun pada bulan November, Rumah Sakit Aisyiyah Siti Fatimah Tulangan menyelenggarakan siklus peninjauan dan pembaruan Formularium Rumah Sakit melalui Farmasi. Para Dokter Penanggung Jawab Pelayanan (DPJP) — baik dokter spesialis poliklinik, dokter rawat inap, anestesi, patologi, maupun dokter IGD — mengusulkan obat-obat baru beserta principle pabrikan yang dibutuhkan untuk pelayanan medis satu tahun ke depan.
 
 ### 1.2 Masalah yang Diselesaikan
 Sebelum sistem ini dibangun, pengumpulan usulan menggunakan Google Form konvensional yang memiliki kendala:
@@ -34,7 +34,7 @@ Aplikasi dibangun dengan arsitektur **Monolitik Ringan (*Lightweight Monolith*)*
 flowchart TD
     subgraph Klien["Klien & Antarmuka Pengguna"]
         Mobile["Browser Mobile / Desktop (DPJP)"]
-        KFT["Tim Farmasi / KFT (Rekapitulasi)"]
+        FarmasiNode["Farmasi (Rekapitulasi)"]
         Sheets["Google Sheets / Excel (Live Sync)"]
     end
 
@@ -69,7 +69,7 @@ flowchart TD
     end
 
     Mobile -->|GET / & POST /proposals| Router
-    KFT -->|GET /recap| Router
+    FarmasiNode -->|GET /recap| Router
     Sheets -->|GET /exports/proposals.csv?token=...| Router
 
     Router --> PropCtrl & RecapCtrl & SuggCtrl & ExpCtrl
@@ -246,7 +246,7 @@ Selama proses implementasi nyata, dilakukan beberapa penyesuaian teknis untuk me
 | **State Awal Repeater Form** | Mengoper `old('items')` langsung ke atribut HTML `x-data="proposalForm(@json(...))"`. | Mengisolasi data awal dalam tag `<script id="proposal-form-data" type="application/json">`. | Mencegah truncation/kerusakan parser HTML saat nama obat atau dokter mengandung tanda petik tunggal (`'`), petik ganda (`"`), atau karakter khusus. |
 | **Filter Dropdown Rekapitulasi** | Menggunakan elemen native HTML `<select>`. | Membangun komponen custom `<x-custom-select>` dengan pencarian internal dan navigasi keyboard. | Elemen select native menyulitkan pencarian ketika dokter atau principle berjumlah puluhan/ratusan; custom select memberikan pengalaman modern dan pencarian instan. |
 | **Stacking Context & Nested Button** | Menggunakan trigger button yang membungkus seluruh isi dropdown. | Memisahkan trigger text dan action clear/chevron menjadi sibling elements, serta penyesuaian z-index. | Memperbaiki layout breakage akibat elemen `<button>` bersarang di HTML serta mencegah dropdown tertimpa baris tabel di bawahnya. |
-| **Dataset Seeder Awal** | Murni hanya mengimpor CSV dasar 206 obat. | Ditambahkan `FormulariumDataSeeder` yang menyelaraskan dokter API dan memetakan string dokter lama secara cerdas. | Memastikan database langsung siap pakai dengan data representatif untuk pengujian KFT dan evaluasi live rekapitulasi. |
+| **Dataset Seeder Awal** | Murni hanya mengimpor CSV dasar 206 obat. | Ditambahkan `FormulariumDataSeeder` yang menyelaraskan dokter API dan memetakan string dokter lama secara cerdas. | Memastikan database langsung siap pakai dengan data representatif untuk pengujian Farmasi dan evaluasi live rekapitulasi. |
 | **Reverse Proxy & HTTPS** | Belum terdefinisi spesifik di bootstrap middleware. | Ditambahkan `$middleware->trustProxies(at: '*')` pada `bootstrap/app.php`. | Menjamin deteksi skema HTTPS, IP client asli, dan URL generator berfungsi benar saat aplikasi dijalankan di balik reverse proxy / load balancer. |
 | **Kolom Tanggal Live CSV** | Terdapat kolom 'Waktu Input' dan format ISO standar. | Format tanggal diseragamkan `d/m/Y`, kolom waktu input dihilangkan dari CSV live, dan ditambah panduan format tanggal di modal. | Google Sheets sering salah membaca string ISO tanggal sebagai teks atau format angka serial; format `d/m/Y` langsung dikenali sebagai tanggal lokal Indonesia. |
 

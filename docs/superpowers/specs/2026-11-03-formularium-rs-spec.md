@@ -11,13 +11,13 @@
 ## 1. Objective (Tujuan, Konteks & Kriteria Keberhasilan)
 
 ### 1.1 Latar Belakang & Masalah
-Setiap tahun pada bulan November, RS Aisyiyah Siti Fatimah Tulangan mengumpulkan usulan obat baru dari para Dokter Penanggung Jawab Pelayanan (DPJP) untuk evaluasi Komite Farmasi dan Terapi (KFT) ke dalam Formularium RS. Penggunaan Google Form terkendala karena:
+Setiap tahun pada bulan November, RS Aisyiyah Siti Fatimah Tulangan mengumpulkan usulan obat baru dari para Dokter Penanggung Jawab Pelayanan (DPJP) untuk evaluasi Farmasi ke dalam Formularium RS. Penggunaan Google Form terkendala karena:
 1. Tidak mendukung input baris berulang (*dynamic form repeater*) untuk banyak obat dalam satu pengajuan.
 2. Tidak terhubung dengan daftar dokter dari REST API internal RS (`portalsifast`) maupun fitur *autocomplete* nama obat & principle yang fleksibel namun terarah.
 
 ### 1.2 Pengguna Utama
 1. **Dokter / DPJP RS (Pengusul):** Mengakses form melalui tautan WhatsApp dari smartphone saat visite maupun PC poliklinik tanpa hambatan login.
-2. **Tim Farmasi / KFT (Pemantau & Pengolah Data):** Memantau rekapitulasi secara langsung, menghubungkan data ke Google Sheets / Microsoft Excel secara *live*, dan mengunduh laporan statis `.xlsx`.
+2. **Farmasi (Pemantau & Pengolah Data):** Memantau rekapitulasi secara langsung, menghubungkan data ke Google Sheets / Microsoft Excel secara *live*, dan mengunduh laporan statis `.xlsx`.
 
 ### 1.3 Goals, Non-Goals, & Anti-Goals
 - **Goals (Sasaran Utama):**
@@ -27,7 +27,7 @@ Setiap tahun pada bulan November, RS Aisyiyah Siti Fatimah Tulangan mengumpulkan
   - Sinkronisasi ke Google Sheets (`=IMPORTDATA`) / Excel Power Query melalui endpoint Live CSV ber-token serta fitur unduh `.xlsx` rapi.
 - **Non-Goals (Di Luar Cakupan / Out of Scope):**
   - Tidak ada sistem autentikasi login, manajemen user, maupun kode PIN pada Halaman Form maupun Halaman Rekapitulasi.
-  - Tidak ada kolom input `Bahan Aktif`, harga obat, alasan klinis panjang, atau status persetujuan KFT di dalam aplikasi.
+  - Tidak ada kolom input `Bahan Aktif`, harga obat, alasan klinis panjang, atau status persetujuan Farmasi di dalam aplikasi.
   - Tidak ada fitur edit atau hapus baris usulan dari antarmuka web publik (demi keamanan data karena halaman terbuka tanpa login).
   - Tidak melakukan perubahan kode apa pun pada repositori `PortalSifast`.
 - **Anti-Goals (Hal yang Harus Dihindari):**

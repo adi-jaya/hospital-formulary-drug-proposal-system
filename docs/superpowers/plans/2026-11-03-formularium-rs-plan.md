@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Membangun aplikasi web mandiri Sistem Usulan Obat Formularium RS Aisyiyah Siti Fatimah Tulangan yang memungkinkan dokter mengajukan banyak usulan obat tanpa login dari HP/PC serta menyediakan halaman rekapitulasi real-time, Live CSV Feed Spreadsheet, dan unduhan `.xlsx` rapi bagi Tim Farmasi/KFT.
+**Goal:** Membangun aplikasi web mandiri Sistem Usulan Obat Formularium RS Aisyiyah Siti Fatimah Tulangan yang memungkinkan dokter mengajukan banyak usulan obat tanpa login dari HP/PC serta menyediakan halaman rekapitulasi real-time, Live CSV Feed Spreadsheet, dan unduhan `.xlsx` rapi bagi Farmasi.
 
 **Architecture:** Aplikasi monolitik ringan berbasis Laravel 12, Blade, Alpine.js lokal, dan Tailwind CSS v4 dengan database utama SQLite mode `WAL` (`busy_timeout = 5000`) menggunakan Eloquent standar yang 100% kompatibel dengan MariaDB. Data dokter diambil dari REST API `portalsifast` melalui backend cache + snapshot JSON lokal + gabungan histori dokter manual, sedangkan saran *autocomplete* menggabungkan kamus referensi read-only dari CSV RS (~206 obat) dengan histori `proposal_items` (*self-learning*) tanpa menulis ke tabel master saat submit.
 

@@ -1,5 +1,5 @@
 # Sistem Usulan Obat Formularium RS
-### RS Aisyiyah Siti Fatimah Tulangan • Komite Farmasi & Terapi (KFT)
+### RS Aisyiyah Siti Fatimah Tulangan • Farmasi
 
 Aplikasi web mandiri (*standalone*) berbasis **Laravel 12**, **Blade**, **Alpine.js**, dan **Tailwind CSS v4** dengan database **SQLite WAL Mode** untuk pengumpulan usulan obat tahunan dari para DPJP (Dokter Penanggung Jawab Pelayanan) tanpa hambatan login (*zero-friction*), dilengkapi dashboard rekapitulasi real-time, integrasi Live Spreadsheet Google Sheets/Excel, dan ekspor file `.xlsx` siap cetak.
 
@@ -175,5 +175,5 @@ FormulariumRS/
 ---
 
 ## Lisensi & Kepemilikan
-Aplikasi ini dikembangkan khusus untuk **RS Aisyiyah Siti Fatimah Tulangan** di bawah pengelolaan Komite Farmasi dan Terapi (KFT).
+Aplikasi ini dikembangkan khusus untuk **RS Aisyiyah Siti Fatimah Tulangan** di bawah pengelolaan Farmasi.
 Hak Cipta &copy; 2026 RS Aisyiyah Siti Fatimah Tulangan. Seluruh hak cipta dilindungi.
