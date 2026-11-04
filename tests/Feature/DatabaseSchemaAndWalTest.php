@@ -22,11 +22,20 @@ it('persists proposals with items and cascades on delete', function (): void {
         'doctor_name' => 'dr. Ahmad Nadhir Sp. U. M. Ked. Klin',
         'proposal_date' => '2026-11-03',
         'period_year' => 2026,
+        'notes' => 'Catatan dokter pengusul',
     ]);
 
     $proposal->items()->createMany([
-        ['medicine_name' => 'Diarvit 100 Mg Tab', 'principal_name' => 'Novell'],
-        ['medicine_name' => 'Paracetamol Drop', 'principal_name' => null],
+        [
+            'medicine_name' => 'Diarvit 100 Mg Tab',
+            'principal_name' => 'Novell',
+            'clinical_justification' => 'Alasan klinis justifikasi pengusulan',
+        ],
+        [
+            'medicine_name' => 'Paracetamol Drop',
+            'principal_name' => null,
+            'clinical_justification' => null,
+        ],
     ]);
 
     ReferenceMedicine::create([
@@ -35,6 +44,8 @@ it('persists proposals with items and cascades on delete', function (): void {
     ]);
 
     expect($proposal->items)->toHaveCount(2)
+        ->and($proposal->notes)->toBe('Catatan dokter pengusul')
+        ->and($proposal->items->first()->clinical_justification)->toBe('Alasan klinis justifikasi pengusulan')
         ->and($proposal->items->first()->proposal->is($proposal))->toBeTrue();
 
     $proposal->delete();

@@ -31,8 +31,13 @@ it('streams sanitized utf-8 csv for valid token and respects optional period_yea
         'doctor_name' => 'dr. Delfia Sp.A',
         'proposal_date' => '2026-11-03',
         'period_year' => 2026,
+        'notes' => 'Catatan khusus ketersediaan distributor',
     ]);
-    $p2026->items()->create(['medicine_name' => '=CMD("calc")', 'principal_name' => null]);
+    $p2026->items()->create([
+        'medicine_name' => '=CMD("calc")',
+        'principal_name' => null,
+        'clinical_justification' => 'Efikasi terapi lini pertama',
+    ]);
 
     $response = $this->get(route('exports.proposals.csv', [
         'token' => 'valid-secret-token',
@@ -43,10 +48,12 @@ it('streams sanitized utf-8 csv for valid token and respects optional period_yea
 
     $csvContent = $response->streamedContent();
     expect($csvContent)
-        ->toContain('No,Tanggal,"Tahun Periode","Nama Dokter","Nama Obat","Nama Principle"')
+        ->toContain('No,Tanggal,"Tahun Periode","Nama Dokter","Nama Obat","Nama Principle","Alasan Klinis","Catatan Pengusul"')
         ->not->toContain('Waktu Input')
         ->toContain('03/11/2026')
         ->toContain("'=CMD(\"\"calc\"\")")
+        ->toContain('Efikasi terapi lini pertama')
+        ->toContain('Catatan khusus ketersediaan distributor')
         ->not->toContain('Obat 2025');
 });
 
@@ -55,10 +62,12 @@ it('exports a valid styled xlsx file matching active filters', function (): void
         'doctor_name' => 'dr. Ahmad Nadhir Sp. U. M. Ked. Klin',
         'proposal_date' => '2026-11-03',
         'period_year' => 2026,
+        'notes' => 'Rekomendasi substitusi harga bersahabat',
     ]);
     $proposal->items()->create([
         'medicine_name' => 'Diarvit 100 Mg Tab',
         'principal_name' => 'Novell',
+        'clinical_justification' => 'Keunggulan efikasi dibanding formularium lama',
     ]);
 
     $response = $this->get(route('exports.proposals.xlsx', ['period_year' => 2026]))->assertOk();
@@ -84,10 +93,14 @@ it('exports a valid styled xlsx file matching active filters', function (): void
     @unlink($tmpFile);
 
     expect($allText)->toContain('REKAPITULASI USULAN OBAT FORMULARIUM RS AISYIYAH SITI FATIMAH TULANGAN')
+        ->and($allText)->toContain('Alasan Klinis')
+        ->and($allText)->toContain('Catatan Pengusul')
         ->and($allText)->toContain('03/11/2026')
         ->and($allText)->toContain('dr. Ahmad Nadhir Sp. U. M. Ked. Klin')
         ->and($allText)->toContain('Diarvit 100 Mg Tab')
-        ->and($allText)->toContain('Novell');
+        ->and($allText)->toContain('Novell')
+        ->and($allText)->toContain('Keunggulan efikasi dibanding formularium lama')
+        ->and($allText)->toContain('Rekomendasi substitusi harga bersahabat');
 });
 
 it('exports null principal_name as dash without escaping it to apostrophe dash in xlsx', function (): void {

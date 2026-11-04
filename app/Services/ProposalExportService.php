@@ -31,6 +31,8 @@ class ProposalExportService
         $options->setColumnWidth(35, 4);  // Nama Dokter
         $options->setColumnWidth(40, 5);  // Nama Obat
         $options->setColumnWidth(25, 6);  // Nama Principle
+        $options->setColumnWidth(45, 7);  // Alasan Klinis
+        $options->setColumnWidth(35, 8);  // Catatan Pengusul
 
         $tempPath = tempnam(sys_get_temp_dir(), 'formulary_export_').'.xlsx';
 
@@ -89,6 +91,8 @@ class ProposalExportService
             'Nama Dokter',
             'Nama Obat',
             'Nama Principle',
+            'Alasan Klinis',
+            'Catatan Pengusul',
         ], $headerStyle));
 
         // 3. Data Rows
@@ -100,6 +104,12 @@ class ProposalExportService
                 $principal = $item->principal_name !== null
                     ? SpreadsheetSanitizer::sanitizeCell($item->principal_name)
                     : '-';
+                $justification = $item->clinical_justification !== null
+                    ? SpreadsheetSanitizer::sanitizeCell($item->clinical_justification)
+                    : '-';
+                $notes = $item->notes !== null
+                    ? SpreadsheetSanitizer::sanitizeCell($item->notes)
+                    : '-';
 
                 $writer->addRow(Row::fromValues([
                     $no++,
@@ -108,6 +118,8 @@ class ProposalExportService
                     SpreadsheetSanitizer::sanitizeCell($item->doctor_name),
                     SpreadsheetSanitizer::sanitizeCell($item->medicine_name),
                     $principal,
+                    $justification,
+                    $notes,
                 ], $dataStyle));
             }
         });

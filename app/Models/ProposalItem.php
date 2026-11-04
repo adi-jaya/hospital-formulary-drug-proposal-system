@@ -21,6 +21,7 @@ class ProposalItem extends Model
         'proposal_id',
         'medicine_name',
         'principal_name',
+        'clinical_justification',
     ];
 
     /**

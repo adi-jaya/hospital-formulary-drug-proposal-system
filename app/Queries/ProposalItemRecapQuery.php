@@ -25,10 +25,12 @@ class ProposalItemRecapQuery
                 'proposal_items.proposal_id',
                 'proposal_items.medicine_name',
                 'proposal_items.principal_name',
+                'proposal_items.clinical_justification',
                 'proposal_items.created_at',
                 'proposals.doctor_name',
                 'proposals.proposal_date',
                 'proposals.period_year',
+                'proposals.notes',
             ]);
 
         if (! empty($filters['period_year'])) {

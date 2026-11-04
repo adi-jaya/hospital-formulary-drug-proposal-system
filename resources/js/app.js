@@ -2,7 +2,7 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 
 Alpine.data('proposalForm', () => {
-    let initialData = { initialItems: [], initialDoctor: '' };
+    let initialData = { initialItems: [], initialDoctor: '', initialNotes: '' };
     const dataElement = document.getElementById('proposal-form-data');
     if (dataElement && dataElement.textContent) {
         try {
@@ -16,9 +16,10 @@ Alpine.data('proposalForm', () => {
         ? initialData.initialItems.map((it) => ({
             medicine_name: it.medicine_name || '',
             principal_name: it.principal_name || '',
+            clinical_justification: it.clinical_justification || '',
             autoFilled: false,
         }))
-        : [{ medicine_name: '', principal_name: '', autoFilled: false }];
+        : [{ medicine_name: '', principal_name: '', clinical_justification: '', autoFilled: false }];
 
     return {
         doctorInput: initialData.initialDoctor || '',
@@ -29,6 +30,7 @@ Alpine.data('proposalForm', () => {
         doctorDebounceTimer: null,
         doctorAbortController: null,
         items: initialItems,
+        notes: initialData.initialNotes || '',
         submitting: false,
 
         handleDoctorInput(e) {
@@ -129,7 +131,7 @@ Alpine.data('proposalForm', () => {
 
         addItem() {
             if (this.items.length < 50) {
-                this.items.push({ medicine_name: '', principal_name: '', autoFilled: false });
+                this.items.push({ medicine_name: '', principal_name: '', clinical_justification: '', autoFilled: false });
             }
         },
 

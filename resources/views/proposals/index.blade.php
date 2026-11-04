@@ -178,6 +178,8 @@
                             <th scope="col" class="py-3 px-4">Nama Dokter</th>
                             <th scope="col" class="py-3 px-4">Nama Obat Diusulkan</th>
                             <th scope="col" class="py-3 px-4">Principle / Pabrik</th>
+                            <th scope="col" class="py-3 px-4 min-w-[220px]">Alasan Klinis</th>
+                            <th scope="col" class="py-3 px-4 min-w-[200px]">Catatan Pengusul</th>
                             <th scope="col" class="py-3 px-4">Waktu Input</th>
                         </tr>
                     </thead>
@@ -210,13 +212,27 @@
                                         <span class="text-slate-400 italic text-[11px]">-</span>
                                     @endif
                                 </td>
+                                <td class="py-3 px-4 text-slate-700 whitespace-pre-line leading-relaxed">
+                                    @if ($item->clinical_justification)
+                                        {{ $item->clinical_justification }}
+                                    @else
+                                        <span class="text-slate-400 italic text-[11px]">-</span>
+                                    @endif
+                                </td>
+                                <td class="py-3 px-4 text-slate-600 whitespace-pre-line leading-relaxed">
+                                    @if ($item->notes)
+                                        {{ $item->notes }}
+                                    @else
+                                        <span class="text-slate-400 italic text-[11px]">-</span>
+                                    @endif
+                                </td>
                                 <td class="py-3 px-4 text-slate-400 whitespace-nowrap text-[11px]">
                                     {{ $item->created_at ? $item->created_at->translatedFormat('d/m/Y H:i') : '-' }}
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="py-12 text-center text-slate-400">
+                                <td colspan="9" class="py-12 text-center text-slate-400">
                                     <svg class="mx-auto h-8 w-8 text-slate-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                                     </svg>

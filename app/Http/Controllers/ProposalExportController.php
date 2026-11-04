@@ -54,6 +54,8 @@ class ProposalExportController extends Controller
                 'Nama Dokter',
                 'Nama Obat',
                 'Nama Principle',
+                'Alasan Klinis',
+                'Catatan Pengusul',
             ]);
 
             $query = ProposalItemRecapQuery::build($filters);
@@ -64,6 +66,12 @@ class ProposalExportController extends Controller
                     $principal = $item->principal_name !== null
                         ? SpreadsheetSanitizer::sanitizeCell($item->principal_name)
                         : '-';
+                    $justification = $item->clinical_justification !== null
+                        ? SpreadsheetSanitizer::sanitizeCell($item->clinical_justification)
+                        : '-';
+                    $notes = $item->notes !== null
+                        ? SpreadsheetSanitizer::sanitizeCell($item->notes)
+                        : '-';
 
                     fputcsv($handle, [
                         $no++,
@@ -72,6 +80,8 @@ class ProposalExportController extends Controller
                         SpreadsheetSanitizer::sanitizeCell($item->doctor_name),
                         SpreadsheetSanitizer::sanitizeCell($item->medicine_name),
                         $principal,
+                        $justification,
+                        $notes,
                     ]);
                 }
             });

@@ -37,10 +37,23 @@ it('stores proposal header and multiple items atomically, normalizing spaces and
     $payload = [
         'doctor_name' => '  dr. Budi   Santoso Sp.An ',
         'proposal_date' => '2026-11-15',
+        'notes' => '  Catatan   khusus ketersediaan distributor  ',
         'items' => [
-            ['medicine_name' => '  Diarvit   100 Mg Tab ', 'principal_name' => '  Novel  '],
-            ['medicine_name' => 'Paracetamol   Drop', 'principal_name' => ' - '],
-            ['medicine_name' => 'Ketamin Inj', 'principal_name' => ''],
+            [
+                'medicine_name' => '  Diarvit   100 Mg Tab ',
+                'principal_name' => '  Novel  ',
+                'clinical_justification' => '  Efikasi   tinggi untuk kasus akut  ',
+            ],
+            [
+                'medicine_name' => 'Paracetamol   Drop',
+                'principal_name' => ' - ',
+                'clinical_justification' => '   ',
+            ],
+            [
+                'medicine_name' => 'Ketamin Inj',
+                'principal_name' => '',
+                'clinical_justification' => null,
+            ],
         ],
     ];
 
@@ -53,11 +66,15 @@ it('stores proposal header and multiple items atomically, normalizing spaces and
     expect($proposal->doctor_name)->toBe('dr. Budi Santoso Sp.An')
         ->and($proposal->proposal_date->toDateString())->toBe('2026-11-15')
         ->and($proposal->period_year)->toBe(2026)
+        ->and($proposal->notes)->toBe('Catatan khusus ketersediaan distributor')
         ->and($proposal->items)->toHaveCount(3)
         ->and($proposal->items[0]->medicine_name)->toBe('Diarvit 100 Mg Tab')
         ->and($proposal->items[0]->principal_name)->toBe('Novell')
+        ->and($proposal->items[0]->clinical_justification)->toBe('Efikasi tinggi untuk kasus akut')
         ->and($proposal->items[1]->principal_name)->toBeNull()
-        ->and($proposal->items[2]->principal_name)->toBeNull();
+        ->and($proposal->items[1]->clinical_justification)->toBeNull()
+        ->and($proposal->items[2]->principal_name)->toBeNull()
+        ->and($proposal->items[2]->clinical_justification)->toBeNull();
 });
 
 it('prevents duplicate double-submit of identical payload within 15 seconds', function (): void {
@@ -80,9 +97,18 @@ it('preserves submitted repeater rows in session old input when validation fails
     $response = $this->from(route('proposals.create'))->post(route('proposals.store'), [
         'doctor_name' => '',
         'proposal_date' => '2026-11-03',
+        'notes' => 'Catatan penting yang harus tetap ada',
         'items' => [
-            ['medicine_name' => 'Obat Satu 10 Mg', 'principal_name' => 'Sanbe'],
-            ['medicine_name' => 'Obat Dua 20 Mg', 'principal_name' => 'Kalbe'],
+            [
+                'medicine_name' => 'Obat Satu 10 Mg',
+                'principal_name' => 'Sanbe',
+                'clinical_justification' => 'Alasan klinis obat satu',
+            ],
+            [
+                'medicine_name' => 'Obat Dua 20 Mg',
+                'principal_name' => 'Kalbe',
+                'clinical_justification' => 'Alasan klinis obat dua',
+            ],
         ],
     ]);
 
@@ -91,5 +117,25 @@ it('preserves submitted repeater rows in session old input when validation fails
 
     $this->followRedirects($response)
         ->assertSee('Obat Satu 10 Mg')
-        ->assertSee('Obat Dua 20 Mg');
+        ->assertSee('Obat Dua 20 Mg')
+        ->assertSee('Catatan penting yang harus tetap ada')
+        ->assertSee('Alasan klinis obat satu')
+        ->assertSee('Alasan klinis obat dua');
+});
+
+it('validates maximum 2000 characters on notes and clinical justification', function (): void {
+    $longText = str_repeat('a', 2001);
+
+    $this->post(route('proposals.store'), [
+        'doctor_name' => 'dr. Budi Sp.An',
+        'proposal_date' => '2026-11-03',
+        'notes' => $longText,
+        'items' => [
+            [
+                'medicine_name' => 'Obat 10 Mg',
+                'principal_name' => 'Sanbe',
+                'clinical_justification' => $longText,
+            ],
+        ],
+    ])->assertSessionHasErrors(['notes', 'items.0.clinical_justification']);
 });

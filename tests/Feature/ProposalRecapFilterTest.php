@@ -28,14 +28,23 @@ it('displays flattened proposal items and filters by period_year, doctor, princi
         'doctor_name' => 'dr. Budi Sp.An',
         'proposal_date' => '2026-11-03',
         'period_year' => 2026,
+        'notes' => 'Catatan dokter anestesi terkait premedikasi',
     ]);
-    $p2026b->items()->create(['medicine_name' => 'Norevell 250 Ml', 'principal_name' => 'Novell']);
+    $p2026b->items()->create([
+        'medicine_name' => 'Norevell 250 Ml',
+        'principal_name' => 'Novell',
+        'clinical_justification' => 'Keunggulan stabilitas infus',
+    ]);
 
     $this->get(route('proposals.index'))
         ->assertOk()
+        ->assertSee('Alasan Klinis')
+        ->assertSee('Catatan Pengusul')
         ->assertSee('Obat Arsip 2025')
         ->assertSee('Anazinc Sirup')
         ->assertSee('Norevell 250 Ml')
+        ->assertSee('Keunggulan stabilitas infus')
+        ->assertSee('Catatan dokter anestesi terkait premedikasi')
         ->assertSee('=IMPORTDATA(', false)
         ->assertSee('secret-feed-token-2026', false);
 

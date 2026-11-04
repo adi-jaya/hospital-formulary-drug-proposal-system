@@ -27,7 +27,7 @@ class ProposalController extends Controller
      */
     public function store(StoreProposalRequest $request): RedirectResponse
     {
-        /** @var array{doctor_name: string, proposal_date: string, items: list<array{medicine_name: string, principal_name: ?string}>} $validated */
+        /** @var array{doctor_name: string, proposal_date: string, notes: ?string, items: list<array{medicine_name: string, principal_name: ?string, clinical_justification: ?string}>} $validated */
         $validated = $request->validated();
 
         $carbonDate = Carbon::parse($validated['proposal_date']);
@@ -35,9 +35,11 @@ class ProposalController extends Controller
         $normalizedPayload = [
             'doctor_name' => $validated['doctor_name'],
             'proposal_date' => $carbonDate->toDateString(),
+            'notes' => $validated['notes'] ?? null,
             'items' => array_map(fn (array $item): array => [
                 'medicine_name' => $item['medicine_name'],
                 'principal_name' => $item['principal_name'] ?? null,
+                'clinical_justification' => $item['clinical_justification'] ?? null,
             ], $validated['items']),
         ];
 
@@ -50,6 +52,7 @@ class ProposalController extends Controller
                     'doctor_name' => $normalizedPayload['doctor_name'],
                     'proposal_date' => $normalizedPayload['proposal_date'],
                     'period_year' => (int) $carbonDate->format('Y'),
+                    'notes' => $normalizedPayload['notes'],
                 ]);
 
                 $proposal->items()->createMany($normalizedPayload['items']);

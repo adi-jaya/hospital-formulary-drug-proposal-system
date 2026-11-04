@@ -21,6 +21,7 @@ class Proposal extends Model
         'doctor_name',
         'proposal_date',
         'period_year',
+        'notes',
     ];
 
     /**

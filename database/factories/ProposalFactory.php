@@ -25,6 +25,7 @@ class ProposalFactory extends Factory
             'doctor_name' => 'dr. '.fake()->name().' Sp.'.fake()->randomElement(['A', 'PD', 'B', 'OG', 'An', 'JP']),
             'proposal_date' => $proposalDate->format('Y-m-d'),
             'period_year' => (int) $proposalDate->format('Y'),
+            'notes' => fake()->optional(0.6)->sentence(),
         ];
     }
 }

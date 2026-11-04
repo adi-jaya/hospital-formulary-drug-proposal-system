@@ -24,6 +24,7 @@ class ProposalItemFactory extends Factory
             'proposal_id' => Proposal::factory(),
             'medicine_name' => fake()->randomElement(['Paracetamol 500 Mg Tab', 'Amoxicillin 500 Mg Cap', 'Cefixime 100 Mg Cap', 'Diarvit 100 Mg Tab']),
             'principal_name' => fake()->optional(0.7)->randomElement(['Novell', 'Kalbe Farma', 'Sanbe', 'Dexa Medica', 'Kimia Farma']),
+            'clinical_justification' => fake()->optional(0.7)->sentence(),
         ];
     }
 }
