@@ -1,59 +1,179 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistem Usulan Obat Formularium RS
+### RS Aisyiyah Siti Fatimah Tulangan • Komite Farmasi & Terapi (KFT)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web mandiri (*standalone*) berbasis **Laravel 12**, **Blade**, **Alpine.js**, dan **Tailwind CSS v4** dengan database **SQLite WAL Mode** untuk pengumpulan usulan obat tahunan dari para DPJP (Dokter Penanggung Jawab Pelayanan) tanpa hambatan login (*zero-friction*), dilengkapi dashboard rekapitulasi real-time, integrasi Live Spreadsheet Google Sheets/Excel, dan ekspor file `.xlsx` siap cetak.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Fitur Utama
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+- **Zero-Friction Doctor Proposal Form (`/`):**
+  - Dokter dapat langsung mengajukan obat tanpa perlu membuat akun atau login PIN.
+  - *Searchable Combobox* Dokter: Terhubung langsung ke REST API `portalsifast` dengan sistem fallback bertingkat (Cache 12 Jam $\rightarrow$ API $\rightarrow$ Snapshot JSON Lokal $\rightarrow$ Pengetikan Manual).
+  - *Dynamic Medicine Repeater:* Mengusulkan 1 hingga 50 obat dalam satu pengiriman formulir.
+  - *Self-Learning Autocomplete:* Rekomendasi nama obat & pabrikan menggabungkan 206 obat kamus referensi RS dengan riwayat usulan terbaru secara *case-insensitive*.
+  - *Principle Auto-Fill:* Memilih obat dari saran otomatis mengisi nama principle/pabrik pasangannya tanpa mengunci pilihan dokter.
+  - *Idempotency Lock & Atomic Transaction:* Transaksi master-detail dibungkus `DB::transaction()` dan dilindungi hash SHA-256 di cache selama 15 detik untuk mencegah duplikasi akibat klik ganda.
+  - *Safe Form Recovery:* Validasi gagal mengembalikan seluruh baris obat tanpa terpotong berkat isolasi data JSON script carrier.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Dashboard Rekapitulasi Real-Time (`/recap`):**
+  - Metrik statistik instan: Total Obat Diusulkan, Dokter Berpartisipasi, dan Total Pengiriman Formulir.
+  - Filter multi-dimensi: Tahun Periode (chip cepat), Dokter, Principle (menggunakan komponen kustom `<x-custom-select>` dengan navigasi keyboard), Rentang Tanggal, dan Pencarian Bebas.
+  - Paginasi 25 baris responsif dengan mempertahankan query string.
 
-## Learning Laravel
+- **Integrasi Live Spreadsheet & Ekspor:**
+  - **Google Sheets Live Sync:** Modal koneksi dengan tombol salin 1-klik rumus `=IMPORTDATA("https://domain-rs/exports/proposals.csv?token=...")`.
+  - **Microsoft Excel Power Query:** Koneksi live via menu *Data $\rightarrow$ From Web*.
+  - **Proteksi Token Statis:** Endpoint CSV feed diamankan dengan validasi token konstan waktu (`hash_equals`).
+  - **Unduh Excel Berformat (`.xlsx`):** Dibuat menggunakan engine ringan `openspout/openspout` dengan streaming memori rendah, header warna hijau zamrud RS (`#065F46`), teks tebal putih, dan border terukur rapi.
+  - **Anti-Formula Injection:** Sanitasi otomatis karakter berisiko (`=`, `+`, `-`, `@`) untuk mencegah eksekusi formula berbahaya di spreadsheet.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Tech Stack & Arsitektur
 
-## Laravel Sponsors
+| Lapisan | Teknologi | Keterangan |
+| :--- | :--- | :--- |
+| **Backend** | PHP `^8.3`, Laravel `^12.0` | Monolitik ringan, routing modern `bootstrap/app.php` |
+| **Database** | SQLite 3 (`WAL` Mode) | `busy_timeout = 5000`, `synchronous = NORMAL`, `foreign_keys = true` |
+| **Frontend** | Blade + Alpine.js `^3.14` | Alpine dibundel lokal melalui Vite (tanpa CDN eksternal) |
+| **Styling** | Tailwind CSS `^4.0` | Menggunakan `@tailwindcss/vite` dengan palet hijau zamrud RS |
+| **Excel Writer** | `openspout/openspout` `^4.32` | Streaming memory-efficient Excel XLSX export |
+| **Testing** | Pest PHP `^3.0` | 25 Feature & Unit Tests (132 assertions, 100% pass) |
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Dokumentasi arsitektur dan teknis mendalam tersedia di [docs/DOKUMENTASI_SISTEM.md](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/FormulariumRS/docs/DOKUMENTASI_SISTEM.md).
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Panduan Cepat Memulai (*Quick Start*)
 
-## Contributing
+### 1. Kebutuhan Sistem
+- PHP `>= 8.3` (ekstensi: `pdo_sqlite`, `curl`, `mbstring`, `zip`, `xml`)
+- Composer `>= 2.7`
+- Node.js `>= 20.0` & NPM
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 2. Instalasi & Setup Lingkungan
+```bash
+# Clone atau buka direktori proyek
+cd FormulariumRS
 
-## Code of Conduct
+# Pasang dependensi
+composer install
+npm install
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Setup konfigurasi lingkungan
+cp .env.example .env
+php artisan key:generate
 
-## Security Vulnerabilities
+# Buat database SQLite dan jalankan migrasi + seeder awal
+touch database/database.sqlite
+php artisan migrate --seed
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Kompilasi aset Vite
+npm run build
+```
 
-## License
+### 3. Konfigurasi Penting `.env`
+Pastikan variabel berikut terisi di file `.env`:
+```dotenv
+APP_TIMEZONE=Asia/Jakarta
+APP_LOCALE=id
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+DB_CONNECTION=sqlite
+DB_FOREIGN_KEYS=true
+
+FORMULARY_DOCTOR_API_URL="https://portalsifast.rsaisyiyahsitifatimah.com/api/dokter"
+FORMULARY_DOCTOR_API_TIMEOUT=10
+FORMULARY_DOCTOR_CACHE_TTL_HOURS=12
+
+# Token 32 karakter untuk mengamankan Live CSV Feed Spreadsheet
+FORMULARY_FEED_TOKEN="ganti_dengan_token_rahasia_32_karakter"
+```
+
+### 4. Menjalankan Server Pengembangan Lokal
+```bash
+composer run dev
+```
+Akses di browser:
+- Formulir Usulan Dokter: `http://localhost:8000/`
+- Rekapitulasi & Live Spreadsheet: `http://localhost:8000/recap`
+
+---
+
+## Perintah Artisan yang Tersedia
+
+```bash
+# Mengimpor atau memperbarui kamus CSV referensi obat & pabrikan
+php artisan formulary:import-csv database/seeders/data/formulary_medicines.csv
+
+# Mengisi database dengan data simulasi realistis (gabungan dokter API & data obat)
+php artisan db:seed --class=FormulariumDataSeeder
+
+# Menjalankan seluruh pengujian otomatis
+./vendor/bin/pest
+
+# Memeriksa dan merapikan standar format kode PHP
+./vendor/bin/pint --test
+```
+
+---
+
+## Struktur Direktori Utama
+
+```text
+FormulariumRS/
+├── app/
+│   ├── Console/Commands/
+│   │   └── ImportFormularyCsvCommand.php     # CLI importer CSV kamus obat
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── ProposalController.php        # Form usulan & penyimpanan atomik
+│   │   │   ├── ProposalRecapController.php   # Halaman rekapitulasi & metrik
+│   │   │   ├── ProposalExportController.php  # Stream CSV ber-token & XLSX download
+│   │   │   └── SuggestionController.php      # JSON suggestions dokter, obat, principle
+│   │   └── Requests/
+│   │       └── StoreProposalRequest.php      # Validasi & normalisasi teks
+│   ├── Models/
+│   │   ├── Proposal.php                      # Model master sesi usulan
+│   │   ├── ProposalItem.php                  # Model rincian obat yang diusulkan
+│   │   └── ReferenceMedicine.php             # Kamus obat referensi RS
+│   ├── Queries/
+│   │   └── ProposalItemRecapQuery.php        # Query builder filter rekapitulasi
+│   ├── Services/
+│   │   ├── DoctorDirectoryService.php        # Integrasi tangguh API, Cache & Snapshot dokter
+│   │   ├── AutocompleteService.php           # Logika hibrida saran obat & principle
+│   │   ├── FormularyCsvImporter.php          # Parser CSV RFC-4180 multi-baris
+│   │   └── ProposalExportService.php         # Penulis spreadsheet XLSX OpenSpout
+│   └── Support/
+│       ├── TextNormalizer.php                # Normalisasi spasi, alias principle & null strip
+│       └── SpreadsheetSanitizer.php          # Sanitasi CSV formula injection
+├── config/
+│   ├── database.php                          # Konfigurasi SQLite WAL & timeout 5000
+│   └── formulary.php                         # Pengaturan API dokter, cache TTL & feed token
+├── database/
+│   ├── migrations/                           # Migrasi proposals, items, & reference_medicines
+│   └── seeders/
+│       ├── DatabaseSeeder.php                # Seeder utama
+│       ├── ReferenceMedicineSeeder.php       # Seeder kamus 206 obat
+│       └── FormulariumDataSeeder.php         # Seeder integrasi dokter API & riwayat usulan
+├── docs/
+│   ├── DOKUMENTASI_SISTEM.md                 # Dokumentasi teknis & arsitektur lengkap
+│   └── superpowers/                          # Spec dan implementation plan
+├── resources/
+│   ├── css/app.css                           # Tema Tailwind CSS v4 palet hijau zamrud RS
+│   ├── js/app.js                             # Alpine.js debounced autocomplete & repeater
+│   └── views/
+│       ├── components/                       # Layout shell & Custom Select Blade components
+│       └── proposals/
+│           ├── create.blade.php              # View formulir usulan obat
+│           └── index.blade.php               # View rekapitulasi & modal spreadsheet
+└── tests/
+    ├── Feature/                              # Pengujian integrasi submission, export, filter
+    └── Unit/                                 # Pengujian normalisasi teks & parser CSV
+```
+
+---
+
+## Lisensi & Kepemilikan
+Aplikasi ini dikembangkan khusus untuk **RS Aisyiyah Siti Fatimah Tulangan** di bawah pengelolaan Komite Farmasi dan Terapi (KFT).
+Hak Cipta &copy; 2026 RS Aisyiyah Siti Fatimah Tulangan. Seluruh hak cipta dilindungi.
