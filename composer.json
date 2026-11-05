@@ -51,6 +51,14 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "tunnel": [
+            "Composer\\Config::disableProcessTimeout",
+            "cloudflared tunnel --url https://hospital-formulary-drug-proposal-system.test --http-host-header hospital-formulary-drug-proposal-system.test --no-tls-verify"
+        ],
+        "herd:share": [
+            "Composer\\Config::disableProcessTimeout",
+            "herd share hospital-formulary-drug-proposal-system.test"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
