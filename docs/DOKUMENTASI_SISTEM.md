@@ -221,18 +221,50 @@ Kamus referensi read-only berisi 206 daftar obat dasar RS beserta pasangan princ
 ### 4.6 Live Spreadsheet Feed & Ekspor Excel Bergaya
 - **Live CSV Feed (`/exports/proposals.csv?token=...`):**
   - Dilindungi token rahasia `config('formulary.feed_token')` dengan perbandingan waktu-konstan [`hash_equals`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/FormulariumRS/app/Http/Controllers/ProposalExportController.php#L24). Request tanpa token atau token tidak valid langsung ditolak dengan status HTTP 403.
-  - Response dialirkan (*streamed*) dalam format UTF-8 dengan header `Cache-Control: no-store, no-cache`.
-  - Format tanggal: `d/m/Y` (DD/MM/YYYY) agar konsisten saat dibaca Google Sheets dan Excel.
-  - Kolom output: `No, Tanggal, Tahun Periode, Nama Dokter, Nama Obat, Nama Principle`.
+  - Response dialirkan (*streamed*) dalam format UTF-8 dengan header `Cache-Control: no-store, no-cache, must-revalidate, max-age=0` dan `Pragma: no-cache`.
+  - Format tanggal: `d/m/Y` (DD/MM/YYYY) agar konsisten saat dibaca Google Sheets dan Excel regional Indonesia.
+  - Kolom output: `No, Tanggal, Tahun Periode, Nama Dokter, Nama Obat, Nama Principle, Alasan Klinis, Catatan Pengusul`.
   - Dilengkapi rumus Google Sheets siap salin 1-klik: `=IMPORTDATA("https://domain-rs/exports/proposals.csv?token=...")`.
 - **Ekspor Excel XLSX (`/exports/proposals.xlsx`):**
   - Dibangun oleh [`ProposalExportService`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/FormulariumRS/app/Services/ProposalExportService.php) menggunakan `OpenSpout`.
-  - Memproses baris secara bertahap (`chunk(250)`) untuk efisiensi memori.
+  - Memproses baris secara bertahap (`chunk(250)`) untuk efisiensi memori (< 10 MB).
   - Judul laporan: *"REKAPITULASI USULAN OBAT FORMULARIUM RS AISYIYAH SITI FATIMAH TULANGAN"* dengan font tebal hijau zamrud.
   - Header tabel menggunakan warna khas rumah sakit: latar hijau zamrud (`Color::rgb(6, 95, 70)`), teks putih tebal, dan border tipis abu-abu.
-  - Lebar kolom diatur proporsional (No: 8, Tanggal: 14, Tahun Periode: 14, Nama Dokter: 35, Nama Obat: 40, Nama Principle: 25).
+  - Lebar kolom diatur proporsional (No: 8, Tanggal: 14, Tahun Periode: 14, Nama Dokter: 35, Nama Obat: 40, Nama Principle: 25, Alasan Klinis: 45, Catatan Pengusul: 35).
 - **Pencegahan Spreadsheet Formula Injection (CSV Injection):**
   - Melalui [`SpreadsheetSanitizer::sanitizeCell`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/FormulariumRS/app/Support/SpreadsheetSanitizer.php), nilai sel yang diawali karakter berisiko (`=`, `+`, `-`, `@`, tab `\t`, atau carriage return `\r`) otomatis diawali tanda kutip tunggal (`'`). Nilai `null` pada kolom principle dirender sebagai strip aman `"-"`.
+
+#### 4.6.1 Karakteristik Pembaruan Data & Sinkronisasi (Update Behavior)
+Banyak pengguna menanyakan: *Apakah spreadsheet otomatis ter-update apabila ada usulan obat baru yang masuk?*
+
+Berikut adalah rincian teknis alur pembaruan data antar platform:
+
+1. **Sisi Server Aplikasi Formularium RS (Real-Time):**
+   - Usulan baru yang dikirimkan oleh dokter langsung tersimpan saat itu juga di database SQLite.
+   - Endpoint Live CSV (`/exports/proposals.csv`) **tidak menahan cache server** (`no-cache, max-age=0`). Setiap request HTTP yang masuk ke endpoint ini akan langsung mengeksekusi query database dan menghasilkan baris data usulan paling mutakhir.
+
+2. **Sisi Google Sheets (`=IMPORTDATA`):**
+   - **Internal Caching Google (1–2 Jam):** Google Sheets memiliki mekanisme perayapan (*crawler*) internal yang menahan cache respons URL eksternal selama **±1 hingga 2 jam**. Oleh karena itu, data usulan baru yang baru saja dikirim dokter **tidak langsung muncul seketika** di Google Sheets jika hanya ditunggu dalam hitungan detik/menit.
+   - **Metode Force Refresh Instan di Google Sheets:**
+     - **Trik Hapus & Undo (Paling Praktis):** Klik sel `A1` (tempat formula `=IMPORTDATA(...)`), tekan tombol `Delete`, lalu segera tekan `Ctrl + Z` (Undo). Google Sheets akan langsung dipaksa menarik data baru dari server tanpa menunggu jeda cache.
+     - **Trik URL Cache-Busting:** Menambahkan parameter versi pada formula, contoh:
+       ```excel
+       =IMPORTDATA("https://domain-rs/exports/proposals.csv?token=...&v=1")
+       ```
+       Ubah angka parameter `v=1` menjadi `v=2` kapan pun ingin memaksa pembaruan data seketika.
+     - **Google Apps Script / Tombol Macro (Opsional):** Jika tim Farmasi menginginkan tombol khusus *"Segarkan Usulan"* di spreadsheet, dapat dibuatkan fungsi Apps Script sederhana yang memperbarui sel formula secara otomatis.
+
+3. **Sisi Microsoft Excel (Power Query / Dari Web):**
+   - **On-Demand (Manual Refresh):** Excel tidak memperbarui data eksternal terus-menerus secara *streaming*. Data baru akan masuk setelah pengguna membuka tab **Data** &rarr; klik tombol **Segarkan Semua (Refresh All)**.
+   - **Konfigurasi Auto-Refresh:** Agar Excel otomatis memperbarui data secara berkala:
+     1. Buka tab **Data** &rarr; klik **Kueri & Koneksi (Queries & Connections)**.
+     2. Klik kanan pada kueri usulan &rarr; pilih **Properti (Properties)**.
+     3. Centang opsi **Segarkan setiap (Refresh every)** dan tentukan durasi (misalnya setiap 5 menit).
+     4. Centang opsi **Segarkan data saat membuka file (Refresh data when opening the file)**.
+
+4. **Sisi Unduhan File Excel (`.xlsx`):**
+   - File `.xlsx` yang diunduh melalui tombol *"Export ke Excel (.xlsx)"* berstatus **snapshot statis**.
+   - Berkas yang sudah tersimpan di komputer pengguna tidak akan berubah otomatis ketika ada usulan baru; pengguna perlu mengklik tombol unduh kembali dari sistem untuk mendapatkan file terbaru.
 
 ---
 

@@ -22,10 +22,10 @@ Aplikasi web mandiri (*standalone*) berbasis **Laravel 12**, **Blade**, **Alpine
   - Paginasi 25 baris responsif dengan mempertahankan query string.
 
 - **Integrasi Live Spreadsheet & Ekspor:**
-  - **Google Sheets Live Sync:** Modal koneksi dengan tombol salin 1-klik rumus `=IMPORTDATA("https://domain-rs/exports/proposals.csv?token=...")`.
-  - **Microsoft Excel Power Query:** Koneksi live via menu *Data $\rightarrow$ From Web*.
+  - **Google Sheets Live Sync:** Modal koneksi dengan tombol salin 1-klik rumus `=IMPORTDATA("https://domain-rs/exports/proposals.csv?token=...")`. Dilengkapi panduan *force refresh* instan (menghapus sel A1 lalu Undo `Ctrl+Z`) untuk melewati jeda cache bawaan Google (1–2 jam).
+  - **Microsoft Excel Power Query:** Koneksi live via menu *Data $\rightarrow$ Dari Web (From Web)* dengan dukungan tombol *Segarkan Semua (Refresh All)* atau interval auto-refresh berkala (misal 5 menit).
   - **Proteksi Token Statis:** Endpoint CSV feed diamankan dengan validasi token konstan waktu (`hash_equals`).
-  - **Unduh Excel Berformat (`.xlsx`):** Dibuat menggunakan engine ringan `openspout/openspout` dengan streaming memori rendah, header warna hijau zamrud RS (`#065F46`), teks tebal putih, dan border terukur rapi.
+  - **Unduh Excel Berformat (`.xlsx`):** Dibuat menggunakan engine ringan `openspout/openspout` dengan streaming memori rendah (< 10 MB), header warna hijau zamrud RS (`#065F46`), teks tebal putih, dan border terukur rapi.
   - **Anti-Formula Injection:** Sanitasi otomatis karakter berisiko (`=`, `+`, `-`, `@`) untuk mencegah eksekusi formula berbahaya di spreadsheet.
 
 ---

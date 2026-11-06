@@ -305,6 +305,12 @@
                             </svg>
                             <span><strong>Tips Kolom Tanggal:</strong> Jika Google Sheets menampilkan angka seri (seperti <code>46340</code>), cukup blok <strong>Kolom B</strong> &rarr; buka menu <strong>Format &gt; Angka &gt; Tanggal</strong>.</span>
                         </div>
+                        <div class="mt-2 p-2.5 bg-sky-50 rounded-lg border border-sky-200/80 text-[11px] text-sky-950 flex items-start gap-2">
+                            <svg class="w-4 h-4 text-sky-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span><strong>Pembaruan Usulan Baru:</strong> Google Sheets meng-cache data eksternal berkala (tiap ±1–2 jam). Jika ingin data usulan baru muncul seketika, cukup hapus sel <code>A1</code> lalu tekan <strong>Ctrl + Z</strong> (Undo).</span>
+                        </div>
                     </div>
 
                     <!-- Excel Guide -->
@@ -315,6 +321,9 @@
                             <li>Masukkan URL CSV Feed ber-token berikut:</li>
                         </ol>
                         <input type="text" readonly value="{{ $liveCsvUrl }}" class="w-full bg-white border border-emerald-200 rounded-lg px-2 py-1 font-mono text-[10px] text-slate-700 select-all mt-1">
+                        <p class="text-[10px] text-slate-500 mt-1">
+                            <em>Tips Refresh:</em> Klik tombol <strong>Segarkan Semua (Refresh All)</strong> di tab <strong>Data</strong> untuk menarik usulan terbaru, atau atur auto-refresh per 5 menit di <em>Properties</em> kueri.
+                        </p>
                     </div>
                 </div>
 
