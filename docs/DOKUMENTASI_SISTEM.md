@@ -352,6 +352,42 @@ FORMULARY_DOCTOR_CACHE_TTL_HOURS=12
 FORMULARY_FEED_TOKEN="ganti_dengan_token_rahasia_32_karakter"
 ```
 
+#### 7.3.1 Prosedur Pembuatan & Validasi FORMULARY_FEED_TOKEN
+Variabel `FORMULARY_FEED_TOKEN` bertindak sebagai *shared secret* untuk mengamankan live feed CSV (`/exports/proposals.csv?token=...`) yang dikonsumsi oleh Google Sheets (`=IMPORTDATA`) dan Excel Power Query. Di sisi backend ([`ProposalExportController::csv`](file:///Users/adijaya/MyFiles/Projects/RSAisyiahSitiFatimahTulangan/FormulariumRS/app/Http/Controllers/ProposalExportController.php#L24)), validasi dilakukan menggunakan `hash_equals()` untuk mencegah celah keamanan *timing attack*.
+
+##### Pilihan Perintah Pembuatan Token (CSPRNG):
+1. **PHP CLI (Standar & Rekomendasi):**
+   ```bash
+   php -r "echo bin2hex(random_bytes(16)) . PHP_EOL;"
+   ```
+2. **Laravel Artisan / Tinker:**
+   ```bash
+   php artisan tinker --execute="echo Str::random(32);"
+   ```
+3. **OpenSSL Terminal (macOS / Linux):**
+   ```bash
+   openssl rand -hex 16
+   ```
+4. **Pembaruan Otomatis ke `.env` Sekali Eksekusi (macOS / Linux):**
+   ```bash
+   NEW_TOKEN=$(php -r "echo bin2hex(random_bytes(16));")
+   sed -i '' "s/^FORMULARY_FEED_TOKEN=.*/FORMULARY_FEED_TOKEN=${NEW_TOKEN}/" .env
+   php artisan config:clear
+   echo "Token terpasang: ${NEW_TOKEN}"
+   ```
+
+##### Prosedur Verifikasi:
+- **Pengujian via cURL:**
+  ```bash
+  # Uji token valid (ekspektasi: HTTP/1.1 200 OK)
+  curl -I "http://localhost:8000/exports/proposals.csv?token=TOKEN_ANDA"
+
+  # Uji tanpa token atau token keliru (ekspektasi: HTTP/1.1 403 Forbidden)
+  curl -I "http://localhost:8000/exports/proposals.csv"
+  ```
+- **Pengujian UI Rekapitulasi:**
+  Akses menu rekapitulasi pada browser (`/recap`), klik tombol **"Sinkronisasi Google Sheets / Excel"**, lalu pastikan URL feed dan formula `=IMPORTDATA("...")` yang disalin secara otomatis telah menyertakan token aktif tersebut.
+
 ### 7.4 Perintah Operasional Berkala
 - **Import/Perbarui Kamus Referensi CSV:**
   ```bash

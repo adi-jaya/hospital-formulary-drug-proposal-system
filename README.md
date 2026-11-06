@@ -90,6 +90,24 @@ FORMULARY_DOCTOR_CACHE_TTL_HOURS=12
 FORMULARY_FEED_TOKEN="ganti_dengan_token_rahasia_32_karakter"
 ```
 
+> **Cara Mengenerate `FORMULARY_FEED_TOKEN`:**
+> Token ini wajib berupa string acak minimal 32 karakter (CSPRNG) untuk mencegah akses tidak sah ke endpoint Live CSV. Anda dapat mengeneratenya melalui:
+>
+> - **PHP CLI (Rekomendasi):**
+>   ```bash
+>   php -r "echo bin2hex(random_bytes(16)) . PHP_EOL;"
+>   ```
+> - **OpenSSL (macOS / Linux):**
+>   ```bash
+>   openssl rand -hex 16
+>   ```
+> - **Generate & Langsung Update file `.env` (macOS / Linux):**
+>   ```bash
+>   NEW_TOKEN=$(php -r "echo bin2hex(random_bytes(16));")
+>   sed -i '' "s/^FORMULARY_FEED_TOKEN=.*/FORMULARY_FEED_TOKEN=${NEW_TOKEN}/" .env
+>   php artisan config:clear
+>   ```
+
 ### 4. Menjalankan Server Pengembangan Lokal
 ```bash
 composer run dev
