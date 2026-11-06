@@ -98,6 +98,13 @@ Akses di browser:
 - Formulir Usulan Dokter: `http://localhost:8000/`
 - Rekapitulasi & Live Spreadsheet: `http://localhost:8000/recap`
 
+### 5. Membagikan Akses Publik via Cloudflare Tunnel
+Untuk keperluan demo, pengujian oleh dokter di smartphone, atau akses dari jaringan luar:
+- **Windows (Laravel Herd)**: Jalankan `.\tunnel.bat`
+- **macOS (MacPorts)**: Jalankan `./tunnel.sh`
+
+Panduan lengkap mengenai arsitektur isolasi aset Vite dan konfigurasi tunnel dapat dibaca di [docs/PANDUAN_TUNNEL.md](docs/PANDUAN_TUNNEL.md).
+
 ---
 
 ## Perintah Artisan yang Tersedia
