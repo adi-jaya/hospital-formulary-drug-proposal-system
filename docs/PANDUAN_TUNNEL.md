@@ -166,10 +166,26 @@ Gunakan skrip shell bash yang telah disediakan di root proyek: `tunnel.sh`. File
 #!/usr/bin/env bash
 set -e
 
+# Pindah ke direktori root proyek
+cd "$(dirname "${BASH_SOURCE[0]}")"
+
 echo "========================================================"
 echo "  Cloudflare Tunnel Helper (macOS / MacPorts)"
 echo "========================================================"
 echo ""
+
+# 0. Deteksi binary cloudflared
+CLOUDFLARED_BIN="$(command -v cloudflared 2>/dev/null || true)"
+if [ -z "$CLOUDFLARED_BIN" ]; then
+    if [ -x "$HOME/.local/bin/cloudflared" ]; then
+        CLOUDFLARED_BIN="$HOME/.local/bin/cloudflared"
+    elif [ -x "/opt/local/bin/cloudflared" ]; then
+        CLOUDFLARED_BIN="/opt/local/bin/cloudflared"
+    else
+        echo "Error: Binary 'cloudflared' tidak ditemukan di PATH."
+        exit 1
+    fi
+fi
 
 # 1. Hapus file public/hot jika tersisa dari npm run dev sebelumnya
 if [ -f "public/hot" ]; then
@@ -183,27 +199,33 @@ npm run build
 echo ""
 
 # 3. Jalankan cloudflared tunnel
-echo "Menjalankan Cloudflare Tunnel..."
-echo "Tekan Ctrl+C untuk menghentikan tunnel."
-echo ""
+DEFAULT_URL="${TUNNEL_URL:-http://localhost:8000}"
 
+echo "Menjalankan Cloudflare Tunnel..."
 if [ $# -eq 0 ]; then
-    cloudflared tunnel
+    echo "Target: $DEFAULT_URL"
+    echo "Buka URL *.trycloudflare.com yang muncul di bawah ini."
+    echo "Tekan Ctrl+C untuk menghentikan tunnel."
+    echo ""
+    "$CLOUDFLARED_BIN" tunnel --url "$DEFAULT_URL"
 else
-    cloudflared tunnel "$@"
+    echo "Parameter kustom: $@"
+    echo "Tekan Ctrl+C untuk menghentikan tunnel."
+    echo ""
+    "$CLOUDFLARED_BIN" tunnel "$@"
 fi
 ```
 
 ### 4.2 Cara Menjalankan
-1. **Mode Konfigurasi Tunnel Bawaan (Named Tunnel / Config YAML)**:
-   Jika Anda sudah memiliki tunnel yang terdaftar di `~/.cloudflared/config.yml` yang mengarah ke vhost MacPorts:
+1. **Mode Default (Quick Tunnel ke `http://localhost:8000`)**:
+   Secara default, skrip otomatis mengarahkan tunnel ke `http://localhost:8000` (port standar `php artisan serve` / `composer dev`) atau nilai variabel `TUNNEL_URL`:
    ```bash
    ./tunnel.sh
    ```
-2. **Mode Quick Tunnel (URL Spesifik)**:
-   Jika Anda ingin mengarahkan tunnel ke URL/port tertentu (misalnya `http://127.0.0.1:8000` atau vhost lokal):
+2. **Mode Parameter Kustom (URL Spesifik / Named Tunnel)**:
+   Jika Anda ingin mengarahkan tunnel ke URL/port tertentu atau menjalankan sub-perintah cloudflared lainnya:
    ```bash
-   ./tunnel.sh --url http://127.0.0.1:8000
+   ./tunnel.sh --url http://127.0.0.1:8080
    ```
 
 ---
