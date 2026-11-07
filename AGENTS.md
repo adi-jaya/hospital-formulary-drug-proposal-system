@@ -188,7 +188,7 @@ npm run dev
 
 ### 4.4 Pengujian (Testing) & Standarisasi Kode
 ```bash
-# Menjalankan seluruh suite Pest PHP (25 tests, 132 assertions)
+# Menjalankan seluruh suite Pest PHP (28 tests, 159 assertions)
 ./vendor/bin/pest
 
 # Menjalankan test via artisan/composer
@@ -205,3 +205,53 @@ php artisan test
 # Memperbaiki formatting kode secara otomatis
 ./vendor/bin/pint
 ```
+
+---
+
+## 5. Prosedur Release & Git Tagging (Operational Guidelines for Agents)
+
+Ketika pengguna menginstruksikan AI Agent untuk membuat **tag** atau **release**, agent **WAJIB** mengikuti alur kerja baku berikut secara disiplin:
+
+### 5.1 Verifikasi Kualitas Pra-Rilis (*Quality Gate*)
+Sebelum membuat tag apa pun, agent dilarang langsung mengeksekusi `git tag`. Agent wajib memastikan seluruh tahap verifikasi berikut terpenuhi:
+1. **Working Tree Bersih**: Jalankan `git status` dan pastikan tidak ada uncommitted changes atau untracked files yang tertinggal. Jika ada perubahan yang sah, commit terlebih dahulu dengan pesan deskriptif.
+2. **Suite Test 100% Pass**: Jalankan `./vendor/bin/pest`. Seluruh pengujian wajib berstatus PASS tanpa error atau peringatan kegagalan.
+3. **Standarisasi Kode Bersih**: Jalankan `./vendor/bin/pint --test` untuk memastikan formatting kode PHP mematuhi standar repositori.
+4. **Verifikasi Build Aset**: Jalankan `npm run build` untuk memvalidasi bahwa seluruh komponen Blade, Vite, Tailwind CSS v4, dan Alpine.js dapat terkompilasi ke `public/build` tanpa error.
+5. **Sinkronisasi Branch**: Pastikan berada di branch `main` dan telah tersinkronisasi dengan upstream (`origin/main`).
+
+### 5.2 Penentuan Versi Berdasarkan Semantic Versioning (SemVer)
+- Periksa tag terakhir yang ada dengan `git tag -l --sort=-v:refname` atau `git describe --tags --abbrev=0`.
+- Terapkan format `v<MAJOR>.<MINOR>.<PATCH>`:
+  - **`v1.0.0`**: Rilis perdana sistem usulan (baseline produksi).
+  - **`PATCH` (misal: `v1.0.1`)**: Perbaikan bug, perbaikan CSS/Blade, sanitasi spreadsheet, atau pembaruan dokumentasi tanpa perubahan fitur.
+  - **`MINOR` (misal: `v1.1.0`)**: Penambahan fitur baru yang backward-compatible (misal: penambahan filter baru di rekapitulasi, tipe ekspor baru, integrasi API baru).
+  - **`MAJOR` (misal: `v2.0.0`)**: Perubahan arsitektur mendasar, breaking changes skema database, atau perombakan alur formulir yang mengubah kontrak data lama.
+
+### 5.3 Pembuatan Annotated Git Tag
+Agent **WAJIB** menggunakan annotated tag (bendera `-a`), bukan lightweight tag:
+```bash
+# Contoh pembuatan annotated tag
+git tag -a v1.0.0 -m "Release v1.0.0: Sistem Usulan Obat Formularium RS Aisyiyah Siti Fatimah Tulangan"
+
+# Verifikasi metadata tag
+git show v1.0.0
+
+# Push tag ke remote GitHub
+git push origin v1.0.0
+```
+> **PENTING**: Dilarang menggunakan force push (`--force`) pada tag yang sudah dipublikasikan ke remote.
+
+### 5.4 Pembuatan GitHub Release & Penyusunan Catatan Rilis (*Release Notes*)
+1. Jika GitHub CLI (`gh`) tersedia dan terautentikasi:
+   ```bash
+   gh release create v1.0.0 \
+     --title "v1.0.0 — Rilis Awal Sistem Usulan Obat Formularium RS" \
+     --generate-notes
+   ```
+2. Jika pembuatan release dilakukan via antarmuka web GitHub, Agent wajib menyajikan teks **Catatan Rilis (*Release Notes*)** yang terstruktur rapi untuk disalin pengguna, dengan struktur:
+   - **Ringkasan Rilis**: Tujuan dan konteks rilis ini.
+   - **Fitur Baru (Added)**: Fitur yang baru diimplementasikan beserta dampaknya bagi pengguna/DPJP/Farmasi.
+   - **Perbaikan & Peningkatan (Changed / Fixed)**: Perbaikan bug, performa, atau penyesuaian UI.
+   - **Dokumentasi & Operasional (Docs)**: Pembaruan panduan atau file referensi teknis.
+   - **Status Pengujian**: Ringkasan jumlah test passing pada versi tersebut.

@@ -5,6 +5,40 @@ Dokumen ini menyajikan panduan arsitektur, spesifikasi teknis, mekanisme kerja d
 
 ---
 
+## Daftar Isi
+
+- [1. Pendahuluan & Latar Belakang](#1-pendahuluan--latar-belakang)
+  - [1.1 Konteks Operasional](#11-konteks-operasional)
+  - [1.2 Masalah yang Diselesaikan](#12-masalah-yang-diselesaikan)
+  - [1.3 Sasaran Sistem (*Key Objectives*)](#13-sasaran-sistem-key-objectives)
+- [2. Arsitektur Sistem](#2-arsitektur-sistem)
+  - [2.1 Stack Teknologi](#21-stack-teknologi)
+- [3. Skema Basis Data & Konvensi](#3-skema-basis-data--konvensi)
+  - [3.1 Tabel `proposals`](#31-tabel-proposals)
+  - [3.2 Tabel `proposal_items`](#32-tabel-proposal_items)
+  - [3.3 Tabel `reference_medicines`](#33-tabel-reference_medicines)
+- [4. Mekanisme & Alur Kerja Komponen Inti](#4-mekanisme--alur-kerja-komponen-inti)
+  - [4.1 Formulir Usulan Obat & Dynamic Repeater (`proposals.create`)](#41-formulir-usulan-obat--dynamic-repeater-proposalscreate)
+  - [4.2 Pencegahan Double-Submit & Integritas Transaksi](#42-pencegahan-double-submit--integritas-transaksi)
+  - [4.3 Ketahanan Integrasi Dokter (`DoctorDirectoryService`)](#43-ketahanan-integrasi-dokter-doctordirectoryservice)
+  - [4.4 Autocomplete Hibrida & Self-Learning Obat (`AutocompleteService`)](#44-autocomplete-hibrida--self-learning-obat-autocompleteservice)
+  - [4.5 Halaman Rekapitulasi & Filter Multi-Dimensi (`proposals.index`)](#45-halaman-rekapitulasi--filter-multi-dimensi-proposalsindex)
+  - [4.6 Live Spreadsheet Feed & Ekspor Excel Bergaya](#46-live-spreadsheet-feed--ekspor-excel-bergaya)
+    - [4.6.1 Karakteristik Pembaruan Data & Sinkronisasi (Update Behavior)](#461-karakteristik-pembaruan-data--sinkronisasi-update-behavior)
+- [5. Ringkasan Penyesuaian di Luar Rencana Awal (*Plan Deviations*)](#5-ringkasan-penyesuaian-di-luar-rencana-awal-plan-deviations)
+- [6. Referensi Rute & API](#6-referensi-rute--api)
+- [7. Panduan Instalasi, Konfigurasi & Operasional](#7-panduan-instalasi-konfigurasi--operasional)
+  - [7.1 Persyaratan Sistem](#71-persyaratan-sistem)
+  - [7.2 Langkah Instalasi Baru](#72-langkah-instalasi-baru)
+  - [7.3 Konfigurasi Environment (`.env`)](#73-konfigurasi-environment-env)
+    - [7.3.1 Prosedur Pembuatan & Validasi FORMULARY_FEED_TOKEN](#731-prosedur-pembuatan--validasi-formulary_feed_token)
+  - [7.4 Perintah Operasional Berkala](#74-perintah-operasional-berkala)
+- [8. Verifikasi Kualitas & Pengujian Otomatis](#8-verifikasi-kualitas--pengujian-otomatis)
+  - [8.1 Menjalankan Pengujian](#81-menjalankan-pengujian)
+  - [8.2 Ringkasan Cakupan Test (28 Tests / 159 Assertions)](#82-ringkasan-cakupan-test-28-tests--159-assertions)
+
+---
+
 ## 1. Pendahuluan & Latar Belakang
 
 ### 1.1 Konteks Operasional
@@ -98,7 +132,7 @@ flowchart TD
   - **Alpine.js `^3.14`:** Dibundel lokal melalui Vite (`resources/js/app.js`), tanpa ketergantungan CDN eksternal agar tetap responsif saat koneksi internet rumah sakit melambat.
   - **Tailwind CSS `^4.0`:** Menggunakan `@tailwindcss/vite` modern dengan variabel tema kustom di `resources/css/app.css`.
 - **Spreadsheet Engine:** `openspout/openspout:^4.32` untuk ekspor file `.xlsx` dengan streaming memori konstan (< 10 MB) meskipun data berjumlah ribuan baris.
-- **Testing & Quality Assurance:** Pest PHP `^3.0` (25 tests, 132 assertions), Laravel Pint.
+- **Testing & Quality Assurance:** Pest PHP `^3.0` (28 tests, 159 assertions), Laravel Pint.
 
 ---
 
@@ -421,7 +455,7 @@ Seluruh logika bisnis, endpoint API, filter, hingga proteksi keamanan diuji seca
 npm run build
 ```
 
-### 8.2 Ringkasan Cakupan Test (25 Tests / 132 Assertions)
+### 8.2 Ringkasan Cakupan Test (28 Tests / 159 Assertions)
 1. **`CsvImportNormalizationTest`:**
    - Normalisasi spasi dan typo ejaan principle (`Novel` → `Novell`, `generik novell` → `Novell Generik`).
    - Sanitasi formula injection prefix (`=`, `+`, `-`, `@`).
@@ -440,6 +474,7 @@ npm run build
    - Penyimpanan master-detail secara atomik di dalam database transaction.
    - Pencegahan double-submit identik dalam jeda 15 detik (idempotency lock).
    - Pemulihan baris input `old('items')` saat validasi form gagal.
+   - Validasi panjang maksimal 2000 karakter untuk catatan dan alasan klinis.
 5. **`ProposalRecapFilterTest`:**
    - Rekapitulasi flattened join tabel obat dan usulan.
    - Pengujian seluruh filter (tahun periode, dokter, principle, rentang tanggal, kata kunci).
@@ -449,3 +484,9 @@ npm run build
    - Validasi output CSV ber-token dengan sanitasi formula injection.
    - Pembacaan fisik file binary `.xlsx` OpenSpout untuk memverifikasi teks header, judul, dan baris data.
    - Sanitasi nilai principle null agar tidak memicu kutip berlebih.
+7. **`DatabaseSchemaAndWalTest`:**
+   - Konfigurasi default koneksi SQLite untuk WAL mode, busy_timeout 5000ms, dan foreign keys.
+   - Integritas relasi master-detail dengan cascade delete.
+8. **`TunnelViteAssetResolutionTest`:**
+   - Pengalihan otomatis ke bundle statis saat diakses dari domain Cloudflare Tunnel untuk mencegah pemblokiran CORS.
+   - Pemeliharaan Vite dev server `public/hot` saat diakses dari domain lokal.
